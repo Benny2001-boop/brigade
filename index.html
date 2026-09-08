@@ -927,54 +927,119 @@
     return initials(name || "?").slice(0,2);
   }
 
+  function rebuildOnlineMembers() {
+    if (!onlineChannel) { onlineMembers = new Map(); return; }
+    const state = onlineChannel.presenceState() || {};
+    const map = new Map();
+    Object.keys(state).forEach(key => {
+      const presences = Array.isArray(state[key]) ? state[key] : [];
+      presences.forEach(p => {
+        if (!p) return;
+        const userId = p.user_id || p.userId || key;
+        const memberId = Number(p.member_id || p.memberId || 0);
+        if (userId && memberId) map.set(String(userId), { ...p, user_id: String(userId), member_id: memberId });
+      });
+    });
+    onlineMembers = map;
+  }
+
   function getOnlineMemberIds() {
-    return new Set(Array.from(onlineMembers.values()).map(x=>Number(x.member_id)).filter(Boolean));
+    return new Set(Array.from(onlineMembers.values()).map(x => Number(x.member_id)).filter(Boolean));
   }
 
   function renderOnlineMembers() {
-    const ids=getOnlineMemberIds();
-    const members=cache.members.filter(m=>m.active!==false && ids.has(Number(m.id)));
-    const html=members.length ? members.sort((a,b)=>rankLevel(b.rank)-rankLevel(a.rank)).map(m=>`<div class="online-member"><div class="online-avatar">${esc(onlineInitials(m.name))}</div><div class="online-member-info"><strong>${esc(m.name||"Unbekannt")}</strong><span>${esc(rankDisplay(m.rank))} · ${esc(m.role||"Mitglied")}</span></div><span class="online-dot" title="Online"></span></div>`).join("") : `<div class="online-empty">Aktuell ist außer dir niemand online.</div>`;
-    if($("online-list")) $("online-list").innerHTML=html;
-    if($("online-list-members")) $("online-list-members").innerHTML=html;
-    const count=members.length;
-    if($("online-count")) $("online-count").textContent=`${count} online`;
-    if($("online-count-members")) $("online-count-members").textContent=`${count} online`;
+    const ids = getOnlineMemberIds();
+    const members = cache.members
+      .filter(m => m.active !== false && ids.has(Number(m.id)))
+      .sort((a,b) => rankLevel(b.rank) - rankLevel(a.rank));
+    const html = members.length
+      ? members.map(m => `<div class="online-member"><div class="online-avatar">${esc(onlineInitials(m.name))}</div><div class="online-member-info"><strong>${esc(m.name || "Unbekannt")}</strong><span>${esc(rankDisplay(m.rank))} · ${esc(m.role || "Mitglied")}</span></div><span class="online-dot" title="Online"></span></div>`).join("")
+      : `<div class="online-empty">Aktuell ist niemand außer dir online.</div>`;
+    if ($("online-list")) $("online-list").innerHTML = html;
+    if ($("online-list-members")) $("online-list-members").innerHTML = html;
+    const count = members.length;
+    if ($("online-count")) $("online-count").textContent = `${count} online`;
+    if ($("online-count-members")) $("online-count-members").textContent = `${count} online`;
   }
 
   async function setupOnlinePresence() {
-    if(!supabaseClient || !currentUser || !currentMember) return;
-    if(onlineChannel) { try { await supabaseClient.removeChannel(onlineChannel); } catch {} onlineChannel=null; }
-    onlineMembers=new Map();
-    onlineChannel=supabaseClient.channel("brigade-online",{config:{presence:{key:currentUser.id}}});
-    onlineChannel.on("presence",{event:"sync"},()=>{
-      const state=onlineChannel.presenceState();
-      onlineMembers=new Map();
-      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
+    if (!supabaseClient || !currentUser || !currentMember) return;
+    if (onlineChannel) {
+      try { await supabaseClient.removeChannel(onlineChannel); } catch {}
+      onlineChannel = null;
+    }
+    onlineMembers = new Map();
+
+    // Alle angemeldeten Brigade-Mitglieder verwenden exakt denselben Presence-Kanal.
+    // Die Presence-Daten enthalten nur die für die Anzeige nötigen Werte.
+    onlineChannel = supabaseClient.channel("brigade-online", {
+      config: { presence: { key: String(currentUser.id) } }
+    });
+
+    const refreshPresence = () => {
+      rebuildOnlineMembers();
       renderOnlineMembers();
       renderMembers();
+    };
+
+    onlineChannel
+      .on("presence", { event: "sync" }, refreshPresence)
+      .on("presence", { event: "join" }, refreshPresence)
+      .on("presence", { event: "leave" }, refreshPresence);
+
+    const status = await onlineChannel.subscribe(async status => {
+      if (status === "SUBSCRIBED") {
+        try {
+          await onlineChannel.track({
+            user_id: String(currentUser.id),
+            member_id: Number(currentMember.id),
+            name: currentMember.name || "Unbekannt",
+            active: true,
+            last_seen: new Date().toISOString()
+          });
+          refreshPresence();
+        } catch (err) {
+          console.warn("Online-Status konnte nicht veröffentlicht werden:", err);
+        }
+      }
     });
-    onlineChannel.on("presence",{event:"join"},()=>{
-      const state=onlineChannel.presenceState();
-      onlineMembers=new Map();
-      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
-      renderOnlineMembers();
-      renderMembers();
-    });
-    onlineChannel.on("presence",{event:"leave"},()=>{
-      const state=onlineChannel.presenceState();
-      onlineMembers=new Map();
-      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
-      renderOnlineMembers();
-      renderMembers();
-    });
-    const status=await onlineChannel.subscribe();
-    if(status==="SUBSCRIBED") {
-      await onlineChannel.track({user_id:currentUser.id,member_id:currentMember.id,name:currentMember.name||"Unbekannt"});
-    } else {
-      console.warn("Online-Präsenz konnte nicht verbunden werden:",status);
+
+    if (status && status !== "SUBSCRIBED") {
+      console.warn("Online-Präsenz konnte nicht verbunden werden:", status);
       renderOnlineMembers();
     }
+
+    // Keep the presence fresh while the page is open and active.
+    // This also helps avoid stale online entries after a browser/tab suspension.
+    if (window.__presenceHeartbeat) clearInterval(window.__presenceHeartbeat);
+    window.__presenceHeartbeat = setInterval(async () => {
+      if (!onlineChannel || !currentUser || document.hidden) return;
+      try {
+        await onlineChannel.track({
+          user_id: String(currentUser.id),
+          member_id: Number(currentMember.id),
+          name: currentMember.name || "Unbekannt",
+          active: true,
+          last_seen: new Date().toISOString()
+        });
+      } catch {}
+    }, 20000);
+
+    document.addEventListener("visibilitychange", async () => {
+      if (!onlineChannel || !currentUser || !currentMember) return;
+      if (!document.hidden) {
+        try {
+          await onlineChannel.track({
+            user_id: String(currentUser.id),
+            member_id: Number(currentMember.id),
+            name: currentMember.name || "Unbekannt",
+            active: true,
+            last_seen: new Date().toISOString()
+          });
+          refreshPresence();
+        } catch {}
+      }
+    });
   }
 
   function renderDashboard() {
@@ -1314,7 +1379,7 @@
       loadTheme(); registerEvents(); startClock();
       if(!window.supabase?.createClient) throw new Error("Supabase JavaScript konnte nicht geladen werden. Bitte Internetverbindung und CDN prüfen.");
       supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(onlineChannel){try{await supabaseClient.removeChannel(onlineChannel);}catch{} onlineChannel=null;}onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
+      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(window.__presenceHeartbeat) { clearInterval(window.__presenceHeartbeat); window.__presenceHeartbeat=null; } if(onlineChannel){try{await supabaseClient.removeChannel(onlineChannel);}catch{} onlineChannel=null;}onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
       if(recoveryUrl()){recoveryMode=true;showRecovery();return;}
       await checkSession();
     } catch(e) { console.error("Startfehler",e); showOnly("loading"); if($("loading")) $("loading").innerHTML=`<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${esc(errorText(e))}</div>`; }
