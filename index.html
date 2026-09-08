@@ -1,15 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111827">
-  <title>Brigade Verwaltung</title>
-
-  <!-- Supabase JavaScript Client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="#111827" name="theme-color"/>
+<title>Brigade Verwaltung</title>
+<!-- Supabase JavaScript Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
     :root {
       --bg: #08090b;
       --bg-2: #0d0f12;
@@ -347,1361 +346,678 @@
 
   </style>
 </head>
-
 <body>
-  <!-- Initialisierung -->
-  <div id="loading">Lade Brigade Verwaltung...</div>
-
-  <!-- LOGIN -->
-  <section id="login" class="auth-container hidden">
-    <div class="auth-card">
-      <h1>Brigade Verwaltung</h1>
-      <p class="intro">Bitte melde dich mit deinem Brigade-Konto an.</p>
-
-      <form id="login-form" novalidate>
-        <label for="email">E-Mail</label>
-        <input id="email" type="email" required autocomplete="email" placeholder="name@beispiel.de">
-
-        <label for="password">Passwort</label>
-        <input id="password" type="password" required autocomplete="current-password" placeholder="Passwort">
-
-        <button id="login-button" class="primary-button" type="submit">Anmelden</button>
-      </form>
-
-      <button id="forgot-password-button" class="link-button" type="button">Passwort vergessen?</button>
-      <button id="show-signup-button" class="link-button" type="button">Account erstellen</button>
-      <div id="login-message" class="message" aria-live="polite"></div>
-    </div>
-  </section>
-
-  <!-- REGISTRIERUNG -->
-  <section id="signup" class="auth-container hidden">
-    <div class="auth-card">
-      <h1>Account erstellen</h1>
-      <p class="intro">Erstelle dein persönliches Brigade-Konto.</p>
-
-      <form id="signup-form" novalidate>
-        <label for="signup-name">Name</label>
-        <input id="signup-name" type="text" required maxlength="100" autocomplete="name" placeholder="Dein Name">
-
-        <label for="signup-email">E-Mail</label>
-        <input id="signup-email" type="email" required autocomplete="email" placeholder="name@beispiel.de">
-
-        <label for="signup-password">Passwort</label>
-        <input id="signup-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Mindestens 6 Zeichen">
-
-        <label for="signup-confirm-password">Passwort wiederholen</label>
-        <input id="signup-confirm-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Passwort wiederholen">
-
-        <button id="signup-button" class="primary-button" type="submit">Account erstellen</button>
-      </form>
-
-      <button id="back-to-login-button" class="link-button" type="button">Zurück zum Login</button>
-      <div id="signup-message" class="message" aria-live="polite"></div>
-    </div>
-  </section>
-
-  <!-- PASSWORT-RESET -->
-  <section id="recovery" class="auth-container hidden">
-    <div class="auth-card">
-      <h1>Neues Passwort</h1>
-      <p class="intro">Lege hier ein neues Passwort für dein Brigade-Konto fest.</p>
-
-      <form id="recovery-form" novalidate>
-        <label for="new-password">Neues Passwort</label>
-        <input id="new-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Mindestens 6 Zeichen">
-
-        <label for="confirm-password">Passwort wiederholen</label>
-        <input id="confirm-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Passwort wiederholen">
-
-        <button id="recovery-button" class="primary-button" type="submit">Passwort ändern</button>
-      </form>
-
-      <div id="recovery-message" class="message" aria-live="polite"></div>
-    </div>
-  </section>
-
-  <!-- DASHBOARD -->
-  <div id="app">
-    <div class="app-shell">
-      <header class="app-header">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">Б</div>
-          <div>
-            <h1>Brigade</h1>
-            <p>Verwaltung der Bruderschaft</p>
-          </div>
-        </div>
-        <div class="user-panel">
-          <div id="member-avatar" class="user-avatar">?</div>
-          <div class="user-details">
-            <div id="member-name" class="user-name">Konto</div>
-            <div id="member-rank" class="user-rank">Wird geladen…</div>
-          </div>
-          <button id="open-search-button" class="settings-button" type="button" aria-label="Globale Suche" title="Globale Suche (Strg+K)">⌕</button>
-           <button id="open-settings-button" class="settings-button" type="button" aria-label="Einstellungen" aria-expanded="false" title="Einstellungen">⚙</button>
-          <button id="open-profile-button" class="profile-action-button header-profile-button" type="button">Profil</button>
-          <button id="logout-button" class="logout-button" type="button">Abmelden</button>
-        </div>
-      </header>
-
-      <div id="settings-menu" class="settings-menu hidden" role="dialog" aria-label="Brigade Einstellungen">
-        <div class="settings-header">
-          <h3>Einstellungen</h3>
-          <p>Profil und persönliches Seitendesign</p>
-        </div>
-        <div class="settings-section">
-          <div class="settings-title">Mein Profil</div>
-          <div class="settings-profile">
-            <div id="settings-avatar" class="settings-avatar">?</div>
-            <div class="settings-profile-info">
-              <div id="settings-profile-name" class="settings-profile-name">Wird geladen…</div>
-              <div id="settings-profile-rank" class="settings-profile-rank">Wird geladen…</div>
-            </div>
-            <button id="settings-profile-button" class="settings-profile-button" type="button">Bearbeiten</button>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-title">Seitendesign</div>
-          <div class="theme-grid">
-            <button class="theme-option" type="button" data-theme-select="bordeaux" style="--theme-accent:#8b2638"><div class="theme-preview"><span style="background:#08090b"></span><span style="background:#15171b"></span><span style="background:#8b2638"></span><span style="background:#b99a61"></span></div><div class="theme-name">Bordeaux</div><div class="theme-description">Brigade-Standard</div><div class="theme-check">✓</div></button>
-            <button class="theme-option" type="button" data-theme-select="steel" style="--theme-accent:#536b7d"><div class="theme-preview"><span style="background:#080a0c"></span><span style="background:#15191d"></span><span style="background:#536b7d"></span><span style="background:#aeb9bd"></span></div><div class="theme-name">Stahl</div><div class="theme-description">Kühl und sachlich</div><div class="theme-check">✓</div></button>
-            <button class="theme-option" type="button" data-theme-select="night" style="--theme-accent:#3d5a80"><div class="theme-preview"><span style="background:#07090d"></span><span style="background:#10151d"></span><span style="background:#3d5a80"></span><span style="background:#9eb6d1"></span></div><div class="theme-name">Nacht</div><div class="theme-description">Dunkles Blau</div><div class="theme-check">✓</div></button>
-            <button class="theme-option" type="button" data-theme-select="forest" style="--theme-accent:#41634c"><div class="theme-preview"><span style="background:#080b09"></span><span style="background:#151a17"></span><span style="background:#41634c"></span><span style="background:#a9ad80"></span></div><div class="theme-name">Wald</div><div class="theme-description">Dunkles Grün</div><div class="theme-check">✓</div></button>
-            <button class="theme-option" type="button" data-theme-select="gold" style="--theme-accent:#876f3f"><div class="theme-preview"><span style="background:#0a0a08"></span><span style="background:#191814"></span><span style="background:#876f3f"></span><span style="background:#d1b56f"></span></div><div class="theme-name">Gold</div><div class="theme-description">Edel und repräsentativ</div><div class="theme-check">✓</div></button>
-          </div>
-        </div>
-      </div>
-
-      <div id="profile-setup-overlay" class="profile-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-setup-title">
-        <div class="profile-setup-card">
-          <h2 id="profile-setup-title">Brigade-Profil erstellen</h2>
-          <p>Dein Login funktioniert bereits. Jetzt fehlt nur noch dein persönliches Brigade-Profil.</p>
-          <div class="profile-note">Beim Erstellen wird zunächst der Rang <strong>Mitglied</strong> und die Rolle <strong>Mitglied</strong> gesetzt. Rang und Rolle können später über die Verwaltung geändert werden.</div>
-          <form id="profile-setup-form" novalidate>
-            <label for="profile-name">Brigade-Name</label>
-            <input id="profile-name" type="text" required maxlength="100" autocomplete="name" placeholder="z. B. Uranov Kimsky">
-            <button id="profile-setup-button" class="primary-button" type="submit">Brigade-Profil erstellen</button>
-            <button id="profile-cancel-button" class="secondary-button" type="button">Später</button>
-          </form>
-          <div id="profile-setup-message" class="message" aria-live="polite"></div>
-        </div>
-      </div>
-
-      <div id="profile-edit-overlay" class="profile-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
-        <div class="profile-setup-card profile-edit-card">
-          <div class="modal-heading-row">
-            <div>
-              <h2 id="profile-edit-title">Mein Brigade-Profil</h2>
-              <p>Gestalte dein persönliches Profil. Rang und Rolle werden von der Verwaltung festgelegt.</p>
-            </div>
-            <button id="profile-edit-close" class="modal-close" type="button" aria-label="Schließen">×</button>
-          </div>
-
-          <div class="profile-preview">
-            <div id="profile-edit-avatar" class="profile-preview-avatar">UK</div>
-            <div>
-              <strong id="profile-preview-name">Uranov Kimsky</strong>
-              <span id="profile-preview-rank">Mitglied · Mitglied</span>
-            </div>
-          </div>
-
-          <form id="profile-edit-form" novalidate>
-            <label for="edit-profile-name">Brigade-Name</label>
-            <input id="edit-profile-name" type="text" required maxlength="100" autocomplete="name" placeholder="Dein Name">
-
-            <label for="edit-profile-motto">Persönliches Motto <span class="label-hint">optional</span></label>
-            <input id="edit-profile-motto" type="text" maxlength="160" placeholder="z. B. Loyal bis zum Ende.">
-
-            <label for="edit-profile-bio">Über mich <span class="label-hint">optional</span></label>
-            <textarea id="edit-profile-bio" maxlength="500" rows="5" placeholder="Ein kurzer Text über dich innerhalb der Brigade..."></textarea>
-
-            <div class="profile-edit-actions">
-              <button id="profile-save-button" class="primary-button" type="submit">Profil speichern</button>
-              <button id="profile-edit-cancel" class="secondary-button" type="button">Abbrechen</button>
-            </div>
-          </form>
-          <div id="profile-edit-message" class="message" aria-live="polite"></div>
-        </div>
-      </div>
-
-      <div class="app-layout">
-        <aside class="sidebar">
-          <div class="nav-title">Navigation</div>
-          <nav id="main-navigation" class="nav-menu" aria-label="Hauptnavigation">
-            <button class="nav-button active" data-page="overview" type="button"><span class="nav-icon">🏠</span>Übersicht</button>
-            <button class="nav-button" data-page="members" type="button"><span class="nav-icon">👥</span>Mitglieder</button>
-            <button class="nav-button" data-page="finances" type="button"><span class="nav-icon">💰</span>Finanzen</button>
-            <button class="nav-button" data-page="resources" type="button"><span class="nav-icon">📦</span>Ressourcen</button>
-            <button class="nav-button" data-page="orders" type="button"><span class="nav-icon">📋</span>Aufträge</button>
-            <button class="nav-button" data-page="production" type="button"><span class="nav-icon">🏭</span>Produktion</button>
-            <button class="nav-button" data-page="weapons" type="button"><span class="nav-icon">🔫</span>Waffen</button>
-            <button class="nav-button" data-page="stats" type="button"><span class="nav-icon">📊</span>Statistik</button>
-             <button class="nav-button" data-page="chronicle" type="button"><span class="nav-icon">📜</span>Chronik</button>
-             <button class="nav-button" data-page="admin" type="button"><span class="nav-icon">⚙️</span>Verwaltung</button>
-          </nav>
-          <div class="sidebar-motto">
-            <strong>ВЕРНОСТЬ · БРАТСТВО</strong>
-            <span>LOYALTY · BROTHERHOOD · HONOUR</span>
-          </div>
-        </aside>
-
-        <main class="content">
-          <section class="page active" data-page-content="overview">
-            <div class="page-header">
-              <h2>Übersicht</h2>
-              <p>Die wichtigsten Informationen auf einen Blick.</p>
-            </div>
-
-            <div id="profile-missing-card" class="card profile-missing-card hidden" style="margin-bottom:20px;">
-              <h3>Dein Brigade-Profil fehlt noch</h3>
-              <p>Dein Konto ist angemeldet, aber noch keinem Brigade-Mitglied zugeordnet.</p>
-              <button id="open-profile-setup-button" class="profile-action-button" type="button">Profil erstellen</button>
-            </div>
-
-            <div id="profile-summary-card" class="card profile-summary-card" style="margin-bottom:20px;">
-              <div class="profile-summary-top">
-                <div id="profile-summary-avatar" class="profile-summary-avatar">?</div>
-                <div class="profile-summary-main">
-                  <div class="eyebrow">Brigade-Profil</div>
-                  <h3 id="profile-summary-name">Wird geladen…</h3>
-                  <div id="profile-summary-rank" class="profile-summary-rank">Wird geladen…</div>
-                </div>
-                <button id="open-profile-summary-button" class="profile-action-button" type="button">Bearbeiten</button>
-              </div>
-              <div id="profile-summary-motto" class="profile-summary-motto"></div>
-              <p id="profile-summary-bio" class="profile-summary-bio">Dein persönliches Brigade-Profil.</p>
-            </div>
-
-            <div class="dashboard">
-              <div class="card stat-card"><h3>Brigadekasse</h3><div id="balance" class="value">$0.00</div></div>
-              <div class="card stat-card"><h3>Ressourcen</h3><div id="resource-count" class="value">0</div></div>
-              <div class="card stat-card"><h3>Offene Aufträge</h3><div id="order-count" class="value">0</div></div>
-              <div class="card stat-card"><h3>Aktive Mitglieder</h3><div id="member-count" class="value">-</div></div>
-            </div>
-
-            <section class="section">
-              <h3>Ressourcenbestand</h3>
-              <div class="card"><div id="resources-list" class="resource-list">Lade Ressourcen...</div></div>
-            </section>
-
-            <section class="section">
-              <h3>Aktuelle Aufträge</h3>
-              <div class="card"><div id="orders-list" class="orders-list">Lade Aufträge...</div></div>
-            </section>
-
-            <div class="split-grid">
-              <section class="section">
-                <h3>Letzte Aktivitäten</h3>
-                <div class="card">
-                  <div class="card-header"><span class="muted">Aktuelle Brigade-Ereignisse</span><button id="overview-activity-refresh" class="small-button" type="button">↻</button></div>
-                  <div id="activity-feed"></div>
-                </div>
-              </section>
-              <section class="section">
-                <h3>Hinweise</h3>
-                <div class="card">
-                  <div id="notification-count" class="muted" style="margin-bottom:8px">0 Hinweise</div>
-                  <div id="notification-list"></div>
-                </div>
-              </section>
-            </div>
-          </section>
-
-          <section class="page" data-page-content="members">
-            <div class="page-header"><h2>Mitglieder</h2><p>Personalakten, Rollen, Status und Brigade-Zugehörigkeit.</p></div>
-            <div class="toolbar"><input id="member-search" class="search" type="search" placeholder="Mitglieder durchsuchen…"><button id="member-refresh" class="small-button" type="button">↻ Aktualisieren</button></div>
-            <div class="card"><div id="members-page-list" class="table-wrap"></div></div>
-          </section>
-
-          <section class="page" data-page-content="finances">
-            <div class="page-header"><h2>Finanzen</h2><p>Brigadekasse, Einnahmen, Ausgaben und Finanzjournal.</p></div>
-            <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Kontostand</div><div id="finance-page-balance" class="kpi-number">$0.00</div><div class="kpi-sub">USD</div></div><div class="card kpi-card"><div class="kpi-label">Einnahmen</div><div id="finance-income" class="kpi-number">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div><div class="card kpi-card"><div class="kpi-label">Ausgaben</div><div id="finance-expense" class="kpi-number">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div></div>
-            <div class="toolbar"><input id="finance-search" class="search" type="search" placeholder="Buchungen durchsuchen…"><button id="finance-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="finance-add" class="small-button" type="button">＋ Buchung</button></div>
-            <div class="card"><div id="finance-list" class="table-wrap"></div></div>
-          </section>
-
-          <section class="page" data-page-content="resources">
-            <div class="page-header"><h2>Ressourcen</h2><p>Bestände, Mindestbestände und Bewegungen.</p></div>
-            <div class="toolbar"><input id="resource-search" class="search" type="search" placeholder="Ressource suchen…"><button id="resource-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="resource-add" class="small-button" type="button">＋ Bestand ändern</button></div>
-            <div id="resource-alerts" class="alert-list" style="margin-bottom:15px"></div><div class="card"><div id="resources-page-list" class="table-wrap"></div></div>
-          </section>
-
-          <section class="page" data-page-content="orders">
-            <div class="page-header"><h2>Aufträge</h2><p>Vom Eingang bis zur Auslieferung mit Statusverlauf.</p></div>
-            <div class="toolbar"><input id="order-search" class="search" type="search" placeholder="Aufträge durchsuchen…"><button id="order-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="order-add" class="small-button" type="button">＋ Neuer Auftrag</button></div>
-            <div class="card"><div id="orders-page-list" class="table-wrap"></div></div>
-          </section>
-
-          <section class="page" data-page-content="production">
-            <div class="page-header"><h2>Produktion</h2><p>Produktionsjobs, Standorte und Fortschritt.</p></div>
-            <div class="toolbar"><input id="production-search" class="search" type="search" placeholder="Jobs durchsuchen…"><button id="production-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="production-add" class="small-button" type="button">＋ Produktionsjob</button></div>
-            <div class="split-grid"><div class="card"><div class="card-header"><h3>Produktionsjobs</h3></div><div id="production-list" class="table-wrap"></div></div><div class="card"><div class="card-header"><h3>Standorte</h3></div><div id="location-list"></div></div></div>
-          </section>
-
-          <section class="page" data-page-content="weapons">
-            <div class="page-header"><h2>Waffen</h2><p>Fiktive RP-Artikel, Kategorien und hinterlegte Produktionsrezepte.</p></div>
-            <div class="toolbar"><input id="weapon-search" class="search" type="search" placeholder="Artikel durchsuchen…"><button id="weapon-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="weapon-add" class="small-button" type="button">＋ Artikel anlegen</button></div>
-            <div class="card"><div id="weapons-list" class="table-wrap"></div></div>
-          </section>
-
-          <section class="page" data-page-content="stats">
-            <div class="page-header"><h2>Statistik</h2><p>Verdichtete Kennzahlen der Brigade.</p></div>
-            <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Aufträge</div><div id="stat-orders" class="kpi-number">0</div><div class="kpi-sub">Gesamt</div></div><div class="card kpi-card"><div class="kpi-label">Erledigt</div><div id="stat-completed" class="kpi-number">0</div><div class="kpi-sub">Fertig oder ausgeliefert</div></div><div class="card kpi-card"><div class="kpi-label">Aktive Mitglieder</div><div id="stat-members" class="kpi-number">0</div><div class="kpi-sub">Status aktiv</div></div><div class="card kpi-card"><div class="kpi-label">Produktionsjobs</div><div id="stat-jobs" class="kpi-number">0</div><div class="kpi-sub">Gesamt</div></div></div>
-            <div class="split-grid"><div class="card"><div class="card-header"><h3>Auftragsstatus</h3></div><div id="stat-order-status"></div></div><div class="card"><div class="card-header"><h3>Artikel-Nachfrage</h3></div><div id="stat-weapons"></div></div></div>
-          </section>
-
-          <section class="page" data-page-content="chronicle">
-            <div class="page-header"><h2>Chronik</h2><p>Die jüngsten sichtbaren Ereignisse der Brigade.</p></div>
-            <div class="toolbar"><button id="chronicle-refresh" class="small-button" type="button">↻ Aktualisieren</button><button id="chronicle-print" class="small-button" type="button">🖨 Drucken</button></div>
-            <div class="card"><div id="chronicle-list"></div></div>
-          </section>
-
-          <section class="page" data-page-content="admin">
-            <div class="page-header"><h2>Verwaltung</h2><p>Werkzeuge für Berechtigungen, Systemstatus und Brigade-Chronik.</p></div>
-            <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Deine Rolle</div><div id="admin-role" class="kpi-number" style="font-size:20px">–</div><div class="kpi-sub">Berechtigungsstufe</div></div><div class="card kpi-card"><div class="kpi-label">System</div><div class="kpi-number"><span class="badge success">Online</span></div><div class="kpi-sub">Supabase-Verbindung</div></div><div class="card kpi-card"><div class="kpi-label">Brigadezeit</div><div id="brigade-clock" class="kpi-number" style="font-size:20px">–</div><div class="kpi-sub">Lokale Browserzeit</div></div></div>
-            <div class="three-grid"><div class="card"><div class="card-header"><h3>Verwaltungsaktionen</h3></div><button id="admin-member-refresh" class="ghost-button" type="button">Mitglieder neu laden</button><button id="admin-system-refresh" class="ghost-button" type="button" style="margin-top:8px">Dashboard aktualisieren</button></div><div class="card"><div class="card-header"><h3>Brigade-Chronik</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Die Chronik fasst die sichtbaren Aktivitäten aus Aufträgen, Finanzen und Ressourcen zusammen.</p><div id="chronicle-summary"></div></div><div class="card"><div class="card-header"><h3>Persönliche Einstellungen</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Farbschema, Profil und Schnellzugriff findest du über das ⚙-Menü oben rechts.</p><button id="admin-open-settings" class="ghost-button" type="button">⚙ Einstellungen öffnen</button></div></div>
-            <div class="card" style="margin-top:15px"><div class="card-header"><h3>Mitglieder & Rollen</h3><span class="badge warning">RLS entscheidet final</span></div><div id="admin-members-list" class="table-wrap"></div></div>
-          </section>
-        </main>
-      </div>
-    </div>
-  </div>
-
-
-  <div id="toast-wrap" class="toast-wrap"></div>
-  <div id="global-search" class="global-search hidden">
-    <div class="search-card">
-      <input id="global-search-input" type="search" placeholder="Suche in Mitgliedern, Aufträgen, Ressourcen und Artikeln…" autocomplete="off">
-      <div id="global-search-results" class="search-results"></div>
-    </div>
-  </div>
-
-  <div id="action-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="close-row"><div><h3 id="action-modal-title" class="modal-title">Aktion</h3><p id="action-modal-sub" class="modal-sub"></p></div><button id="action-modal-close" class="modal-close" type="button">×</button></div>
-      <form id="action-form"></form><div id="action-message" class="message" aria-live="polite"></div>
-    </div>
-  </div>
-  <div id="detail-modal" class="modal-overlay hidden"><div class="modal-card wide"><div class="close-row"><div><h3 id="detail-title" class="modal-title">Details</h3><p id="detail-sub" class="modal-sub"></p></div><button id="detail-close" class="modal-close" type="button">×</button></div><div id="detail-content"></div></div></div>
-
-  <script>
-    "use strict";
-
-    // =========================================================
-    // SUPABASE
-    // =========================================================
-
-    const SUPABASE_URL = "https://gcdmmzchqcwshwiwqafa.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_TjviimwkfAiJALkKUqJKZA_Zpyl7rQC";
-
-    let supabaseClient = null;
-    let recoveryMode = false;
-    let startupFinished = false;
-
-    // =========================================================
-    // DOM
-    // =========================================================
-
-    const $ = (id) => document.getElementById(id);
-
-    const loadingElement = $("loading");
-    const loginElement = $("login");
-    const signupElement = $("signup");
-    const recoveryElement = $("recovery");
-    const appElement = $("app");
-    const profileSetupOverlay = $("profile-setup-overlay");
-    const profileSetupForm = $("profile-setup-form");
-    const profileEditOverlay = $("profile-edit-overlay");
-    const profileEditForm = $("profile-edit-form");
-
-    const loginForm = $("login-form");
-    const signupForm = $("signup-form");
-    const recoveryForm = $("recovery-form");
-
-    // =========================================================
-    // HILFSFUNKTIONEN
-    // =========================================================
-
-    function escapeHtml(value) {
-      if (value === null || value === undefined) return "";
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function setMessage(element, text, type = "") {
-      element.className = "message" + (type ? " " + type : "");
-      element.textContent = text || "";
-    }
-
-    function getErrorMessage(error) {
-      if (!error) return "Unbekannter Fehler.";
-
-      const message = String(error.message || error.error_description || error);
-      const lower = message.toLowerCase();
-
-      if (lower.includes("invalid login credentials")) {
-        return "E-Mail oder Passwort ist falsch.";
-      }
-
-      if (lower.includes("email rate limit exceeded")) {
-        return "Zu viele E-Mail-Anfragen. Bitte warte etwas und versuche es später erneut.";
-      }
-
-      if (lower.includes("user already registered")) {
-        return "Für diese E-Mail-Adresse existiert bereits ein Account.";
-      }
-
-      if (lower.includes("password should be at least")) {
-        return "Das Passwort ist zu kurz.";
-      }
-
-      if (lower.includes("email not confirmed")) {
-        return "Die E-Mail-Adresse wurde noch nicht bestätigt.";
-      }
-
-      if (lower.includes("network") || lower.includes("failed to fetch")) {
-        return "Verbindung zu Supabase fehlgeschlagen. Bitte prüfe deine Internetverbindung und versuche es erneut.";
-      }
-
-      return message;
-    }
-
-    function hideAllScreens() {
-      loadingElement.classList.add("hidden");
-      loginElement.classList.add("hidden");
-      signupElement.classList.add("hidden");
-      recoveryElement.classList.add("hidden");
-      appElement.style.display = "none";
-    }
-
-    function showLogin(message = "", type = "") {
-      hideAllScreens();
-      loginElement.classList.remove("hidden");
-      if (message) setMessage($("login-message"), message, type);
-    }
-
-    function showSignup() {
-      hideAllScreens();
-      signupElement.classList.remove("hidden");
-      setMessage($("signup-message"), "");
-      setTimeout(() => $("signup-name").focus(), 50);
-    }
-
-    function showRecovery() {
-      hideAllScreens();
-      recoveryElement.classList.remove("hidden");
-      setTimeout(() => $("new-password").focus(), 50);
-    }
-
-    function showApp() {
-      hideAllScreens();
-      appElement.style.display = "block";
-    }
-
-    function isRecoveryUrl() {
-      const hash = window.location.hash.replace(/^#/, "");
-      if (!hash) return false;
-
-      try {
-        const params = new URLSearchParams(hash);
-        return params.get("type") === "recovery";
-      } catch (_) {
-        return false;
-      }
-    }
-
-    function clearRecoveryUrl() {
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-    }
-
-    function setButtonLoading(button, loading, loadingText, normalText) {
-      button.disabled = loading;
-      button.textContent = loading ? loadingText : normalText;
-    }
-
-    function showProfileSetup(prefillName = "") {
-      profileSetupOverlay.classList.remove("hidden");
-      $("profile-name").value = prefillName || $("profile-name").value || "";
-      setMessage($("profile-setup-message"), "");
-      setTimeout(() => $("profile-name").focus(), 50);
-    }
-
-    function hideProfileSetup() {
-      profileSetupOverlay.classList.add("hidden");
-    }
-
-    function setProfileMissing(show) {
-      $("profile-missing-card").classList.toggle("hidden", !show);
-    }
-
-    let currentMember = null;
-
-    function getInitials(name) {
-      const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
-      if (!parts.length) return "?";
-      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-
-    function updateProfilePreview() {
-      const name = $("edit-profile-name").value.trim() || "Dein Name";
-      $("profile-edit-avatar").textContent = getInitials(name);
-      $("profile-preview-name").textContent = name;
-      const rank = currentMember?.rank || "Mitglied";
-      const role = currentMember?.role ? ` · ${currentMember.role}` : "";
-      $("profile-preview-rank").textContent = rank + role;
-    }
-
-    function openProfileEditor() {
-      if (!currentMember) return;
-      $("edit-profile-name").value = currentMember.name || "";
-      $("edit-profile-motto").value = currentMember.motto || "";
-      $("edit-profile-bio").value = currentMember.bio || "";
-      setMessage($("profile-edit-message"), "");
-      updateProfilePreview();
-      profileEditOverlay.classList.remove("hidden");
-      setTimeout(() => $("edit-profile-name").focus(), 50);
-    }
-
-    function closeProfileEditor() {
-      profileEditOverlay.classList.add("hidden");
-    }
-
-    function updateProfileSummary() {
-      if (!currentMember) return;
-      const name = currentMember.name || "Mitglied";
-      const rank = currentMember.rank || "Mitglied";
-      const role = currentMember.role ? ` · ${currentMember.role}` : "";
-      $("profile-summary-name").textContent = name;
-      $("profile-summary-avatar").textContent = getInitials(name);
-      $("profile-summary-rank").textContent = rank + role;
-      $("profile-summary-motto").textContent = currentMember.motto ? `„${currentMember.motto}“` : "";
-      $("profile-summary-bio").textContent = currentMember.bio || "Dein persönliches Brigade-Profil.";
-    }
-
-    initNavigation();
-
-    // =========================================================
-    // PROFIL BEARBEITEN
-    // =========================================================
-
-    $("open-profile-button").addEventListener("click", openProfileEditor);
-    $("open-profile-summary-button").addEventListener("click", openProfileEditor);
-    $("profile-edit-close").addEventListener("click", closeProfileEditor);
-    $("profile-edit-cancel").addEventListener("click", closeProfileEditor);
-    profileEditOverlay.addEventListener("click", (event) => {
-      if (event.target === profileEditOverlay) closeProfileEditor();
-    });
-    $("edit-profile-name").addEventListener("input", updateProfilePreview);
-
-    profileEditForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!currentMember?.id) return;
-
-      const name = $("edit-profile-name").value.trim();
-      const motto = $("edit-profile-motto").value.trim();
-      const bio = $("edit-profile-bio").value.trim();
-      const button = $("profile-save-button");
-
-      if (!name) {
-        setMessage($("profile-edit-message"), "Bitte einen Brigade-Namen eingeben.", "error");
-        return;
-      }
-
-      setButtonLoading(button, true, "Wird gespeichert...", "Profil speichern");
-      try {
-        const { data, error } = await supabaseClient.from("members")
-          .update({ name, motto, bio })
-          .eq("id", currentMember.id)
-          .eq("auth_user_id", currentMember.auth_user_id)
-          .select("id, name, rank, role, active, auth_user_id, motto, bio")
-          .single();
-
-        if (error) throw error;
-        currentMember = data;
-        $("member-name").textContent = data.name;
-        $("member-avatar").textContent = getInitials(data.name);
-        $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
-        updateProfileSummary();
-        updateSettingsProfile();
-        setMessage($("profile-edit-message"), "Profil gespeichert.", "success");
-        setTimeout(closeProfileEditor, 500);
-      } catch (error) {
-        console.error("Profil konnte nicht gespeichert werden:", error);
-        setMessage($("profile-edit-message"), "Profil konnte nicht gespeichert werden: " + getErrorMessage(error), "error");
-      } finally {
-        setButtonLoading(button, false, "Wird gespeichert...", "Profil speichern");
-      }
-    });
-
-    // =========================================================
-    // PROFIL ERSTELLEN
-    // =========================================================
-
-    $("open-profile-setup-button").addEventListener("click", () => {
-      showProfileSetup($("member-name").textContent !== "Konto" ? $("member-name").textContent : "");
-    });
-
-    $("profile-cancel-button").addEventListener("click", hideProfileSetup);
-
-    profileSetupForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const name = $("profile-name").value.trim();
-      const button = $("profile-setup-button");
-      setMessage($("profile-setup-message"), "");
-
-      if (!name) {
-        setMessage($("profile-setup-message"), "Bitte einen Brigade-Namen eingeben.", "error");
-        return;
-      }
-
-      setButtonLoading(button, true, "Profil wird erstellt...", "Brigade-Profil erstellen");
-      try {
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-        if (userError || !user) throw userError || new Error("Kein angemeldeter Benutzer gefunden.");
-
-        const { data, error } = await supabaseClient.from("members").insert({
-          name, rank: "Mitglied", role: "Mitglied", active: true, auth_user_id: user.id, motto: "", bio: ""
-        }).select("id, name, rank, role, active, auth_user_id, motto, bio").single();
-
-        if (error) {
-          if (String(error.code || "").toLowerCase() === "23505") {
-            await loadMember();
-            hideProfileSetup();
-            return;
-          }
-          throw error;
-        }
-        if (!data) throw new Error("Das Profil wurde nicht zurückgegeben.");
-        setProfileMissing(false);
-        hideProfileSetup();
-        currentMember = data;
-        await loadMember();
-      } catch (error) {
-        console.error("Profil konnte nicht erstellt werden:", error);
-        setMessage($("profile-setup-message"), "Profil konnte nicht erstellt werden: " + getErrorMessage(error), "error");
-      } finally {
-        setButtonLoading(button, false, "Profil wird erstellt...", "Brigade-Profil erstellen");
-      }
-    });
-
-    // =========================================================
-    // LOGIN
-    // =========================================================
-
-    loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const email = $("email").value.trim();
-      const password = $("password").value;
-      const button = $("login-button");
-
-      setMessage($("login-message"), "");
-
-      if (!email || !password) {
-        setMessage($("login-message"), "Bitte E-Mail und Passwort eingeben.", "error");
-        return;
-      }
-
-      setButtonLoading(button, true, "Anmeldung...", "Anmelden");
-
-      try {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-        if (error) {
-          setMessage($("login-message"), "Anmeldung fehlgeschlagen: " + getErrorMessage(error), "error");
-          return;
-        }
-
-        await checkSession();
-      } catch (error) {
-        console.error(error);
-        setMessage($("login-message"), "Anmeldung fehlgeschlagen: " + getErrorMessage(error), "error");
-      } finally {
-        setButtonLoading(button, false, "Anmeldung...", "Anmelden");
-      }
-    });
-
-    // =========================================================
-    // ACCOUNT ERSTELLEN
-    // =========================================================
-
-    $("show-signup-button").addEventListener("click", () => {
-      signupForm.reset();
-      showSignup();
-    });
-
-    $("back-to-login-button").addEventListener("click", () => {
-      signupForm.reset();
-      showLogin();
-    });
-
-    signupForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const name = $("signup-name").value.trim();
-      const email = $("signup-email").value.trim();
-      const password = $("signup-password").value;
-      const confirmPassword = $("signup-confirm-password").value;
-      const button = $("signup-button");
-
-      setMessage($("signup-message"), "");
-
-      if (!name) {
-        setMessage($("signup-message"), "Bitte deinen Namen eingeben.", "error");
-        return;
-      }
-
-      if (!email) {
-        setMessage($("signup-message"), "Bitte eine E-Mail-Adresse eingeben.", "error");
-        return;
-      }
-
-      if (password.length < 6) {
-        setMessage($("signup-message"), "Das Passwort muss mindestens 6 Zeichen lang sein.", "error");
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        setMessage($("signup-message"), "Die Passwörter stimmen nicht überein.", "error");
-        return;
-      }
-
-      setButtonLoading(button, true, "Account wird erstellt...", "Account erstellen");
-
-      try {
-        const redirectTo = window.location.origin + window.location.pathname;
-
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name },
-            emailRedirectTo: redirectTo
-          }
-        });
-
-        if (error) {
-          setMessage($("signup-message"), "Account konnte nicht erstellt werden: " + getErrorMessage(error), "error");
-          return;
-        }
-
-        // Bei deaktivierter E-Mail-Bestätigung gibt Supabase direkt eine Session zurück.
-        if (data.session) {
-          setMessage($("signup-message"), "Account erstellt. Anmeldung läuft...", "success");
-          await checkSession();
-          return;
-        }
-
-        // Bei aktivierter E-Mail-Bestätigung gibt es zunächst keine Session.
-        setMessage(
-          $("signup-message"),
-          "Account wurde erstellt. Falls Supabase eine Bestätigungs-E-Mail verlangt, bestätige zuerst die E-Mail-Adresse. Danach kannst du dich einloggen.",
-          "success"
-        );
-      } catch (error) {
-        console.error(error);
-        setMessage($("signup-message"), "Account konnte nicht erstellt werden: " + getErrorMessage(error), "error");
-      } finally {
-        setButtonLoading(button, false, "Account wird erstellt...", "Account erstellen");
-      }
-    });
-
-    // =========================================================
-    // PASSWORT VERGESSEN
-    // =========================================================
-
-    $("forgot-password-button").addEventListener("click", async () => {
-      const email = $("email").value.trim();
-      const button = $("forgot-password-button");
-
-      setMessage($("login-message"), "");
-
-      if (!email) {
-        setMessage($("login-message"), "Bitte zuerst deine E-Mail-Adresse eingeben.", "error");
-        $("email").focus();
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = "E-Mail wird angefordert...";
-
-      try {
-        const redirectTo = window.location.origin + window.location.pathname;
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-
-        if (error) {
-          setMessage($("login-message"), "Passwort-Reset fehlgeschlagen: " + getErrorMessage(error), "error");
-          return;
-        }
-
-        setMessage(
-          $("login-message"),
-          "Die Reset-E-Mail wurde angefordert. Bitte prüfe deinen Posteingang.",
-          "success"
-        );
-      } catch (error) {
-        console.error(error);
-        setMessage($("login-message"), "Passwort-Reset fehlgeschlagen: " + getErrorMessage(error), "error");
-      } finally {
-        button.disabled = false;
-        button.textContent = "Passwort vergessen?";
-      }
-    });
-
-    // =========================================================
-    // PASSWORT ÄNDERN
-    // =========================================================
-
-    recoveryForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const newPassword = $("new-password").value;
-      const confirmPassword = $("confirm-password").value;
-      const button = $("recovery-button");
-
-      setMessage($("recovery-message"), "");
-
-      if (newPassword.length < 6) {
-        setMessage($("recovery-message"), "Das Passwort muss mindestens 6 Zeichen lang sein.", "error");
-        return;
-      }
-
-      if (newPassword !== confirmPassword) {
-        setMessage($("recovery-message"), "Die Passwörter stimmen nicht überein.", "error");
-        return;
-      }
-
-      setButtonLoading(button, true, "Passwort wird geändert...", "Passwort ändern");
-
-      try {
-        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-
-        if (error) {
-          setMessage($("recovery-message"), "Passwort konnte nicht geändert werden: " + getErrorMessage(error), "error");
-          return;
-        }
-
-        setMessage($("recovery-message"), "Passwort erfolgreich geändert. Du kannst dich jetzt anmelden.", "success");
-
-        setTimeout(async () => {
-          await supabaseClient.auth.signOut();
-          recoveryMode = false;
-          clearRecoveryUrl();
-          recoveryForm.reset();
-          showLogin("Dein Passwort wurde geändert. Bitte melde dich an.", "success");
-        }, 1200);
-      } catch (error) {
-        console.error(error);
-        setMessage($("recovery-message"), "Passwort konnte nicht geändert werden: " + getErrorMessage(error), "error");
-      } finally {
-        setButtonLoading(button, false, "Passwort wird geändert...", "Passwort ändern");
-      }
-    });
-
-    // =========================================================
-    // EINSTELLUNGEN / FARBTHEMES
-    // =========================================================
-    $("open-search-button").addEventListener("click", openGlobalSearch);
-    const settingsButton = $("open-settings-button");
-    const settingsMenu = $("settings-menu");
-    const themeButtons = document.querySelectorAll("[data-theme-select]");
-    const validThemes = ["bordeaux", "steel", "night", "forest", "gold"];
-
-    function applyTheme(theme) {
-      if (!validThemes.includes(theme)) theme = "bordeaux";
-      document.body.dataset.theme = theme;
-      themeButtons.forEach(button => button.classList.toggle("active", button.dataset.themeSelect === theme));
-      try { localStorage.setItem("brigade-theme", theme); } catch (_) {}
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.content = ({bordeaux:"#8b2638",steel:"#536b7d",night:"#3d5a80",forest:"#41634c",gold:"#876f3f"})[theme];
-    }
-
-    function loadTheme() {
-      let theme = "bordeaux";
-      try { theme = localStorage.getItem("brigade-theme") || theme; } catch (_) {}
-      applyTheme(theme);
-    }
-
-    function updateSettingsProfile() {
-      if (currentMember) {
-        const name = currentMember.name || "Mitglied";
-        const role = currentMember.role ? ` · ${currentMember.role}` : "";
-        $("settings-avatar").textContent = getInitials(name);
-        $("settings-profile-name").textContent = name;
-        $("settings-profile-rank").textContent = `${currentMember.rank || "Mitglied"}${role}`;
-      }
-    }
-
-    function closeSettings() {
-      settingsMenu.classList.add("hidden");
-      settingsButton.classList.remove("active");
-      settingsButton.setAttribute("aria-expanded", "false");
-    }
-
-    settingsButton.addEventListener("click", event => {
-      event.stopPropagation();
-      const closed = settingsMenu.classList.toggle("hidden");
-      settingsButton.classList.toggle("active", !closed);
-      settingsButton.setAttribute("aria-expanded", String(!closed));
-      if (!closed) updateSettingsProfile();
-    });
-
-    settingsMenu.addEventListener("click", event => event.stopPropagation());
-    document.addEventListener("click", () => closeSettings());
-    document.addEventListener("keydown", event => { if (event.key === "Escape") closeSettings(); });
-
-    themeButtons.forEach(button => {
-      button.addEventListener("click", () => applyTheme(button.dataset.themeSelect));
-    });
-
-    $("settings-profile-button").addEventListener("click", () => {
-      closeSettings();
-      openProfileEditor();
-    });
-
-    loadTheme();
-
-    // =========================================================
-    // LOGOUT
-    // =========================================================
-
-    $("logout-button").addEventListener("click", async () => {
-      try {
-        await supabaseClient.auth.signOut();
-      } catch (error) {
-        console.error(error);
-      }
-      recoveryMode = false;
-      clearRecoveryUrl();
-      showLogin();
-    });
-
-    // =========================================================
-    // SEITENNAVIGATION
-    // =========================================================
-
-    function showPage(pageName) {
-      document.querySelectorAll("[data-page-content]").forEach(page => {
-        page.classList.toggle("active", page.dataset.pageContent === pageName);
-      });
-
-      document.querySelectorAll(".nav-button").forEach(button => {
-        button.classList.toggle("active", button.dataset.page === pageName);
-      });
-
-      window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}#${pageName}`);
-    }
-
-    function initNavigation() {
-      document.querySelectorAll(".nav-button").forEach(button => {
-        button.addEventListener("click", () => showPage(button.dataset.page));
-      });
-
-      const initialPage = window.location.hash.replace("#", "");
-      const validPages = ["overview", "members", "finances", "resources", "orders", "production", "weapons", "stats", "chronicle", "admin"];
-      showPage(validPages.includes(initialPage) ? initialPage : "overview");
-    }
-
-    // =========================================================
-    // MITGLIED
-    // =========================================================
-
-    async function loadMember() {
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-      if (userError || !user) {
-        $("member-name").textContent = "Konto";
-        $("member-rank").textContent = "Nicht angemeldet";
-        $("member-avatar").textContent = "?";
-        setProfileMissing(false);
-        return;
-      }
-
-      const authName = user.user_metadata?.name || user.email?.split("@")[0] || "Konto";
-      $("member-name").textContent = authName;
-      $("member-avatar").textContent = authName.trim().slice(0, 2) || "?";
-
-      const { data, error } = await supabaseClient.from("members")
-        .select("id, name, rank, role, active, auth_user_id, motto, bio")
-        .eq("auth_user_id", user.id)
-        .eq("active", true)
-        .maybeSingle();
-
-      if (error || !data) {
-        console.error("Mitglied konnte nicht geladen werden:", error);
-        $("member-rank").textContent = "Profil einrichten";
-        setProfileMissing(true);
-        showProfileSetup(authName);
-        return;
-      }
-
-      setProfileMissing(false);
-      hideProfileSetup();
-      currentMember = data;
-      const displayName = data.name || authName;
-      $("member-name").textContent = displayName;
-      $("member-avatar").textContent = getInitials(displayName);
-      $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
-      updateProfileSummary();
-      updateSettingsProfile();
-    }
-
-    // =========================================================
-    // FINANZEN
-    // =========================================================
-
-    async function loadFinances() {
-      const { data, error } = await supabaseClient
-        .from("brigade_finances")
-        .select("balance, currency")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Finanzen konnten nicht geladen werden:", error);
-        $("balance").textContent = "Fehler";
-        return;
-      }
-
-      if (!data) {
-        $("balance").textContent = "$0.00";
-        return;
-      }
-
-      const balance = Number(data.balance || 0);
-      const currency = data.currency || "USD";
-
-      try {
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency
-        }).format(balance);
-        $("balance").textContent = formatted;
-        $("finance-page-balance").textContent = formatted;
-      } catch (_) {
-        const formatted = `${balance.toFixed(2)} ${escapeHtml(currency)}`;
-        $("balance").textContent = formatted;
-        $("finance-page-balance").textContent = formatted;
-      }
-    }
-
-    // =========================================================
-    // RESSOURCEN
-    // =========================================================
-
-    async function loadResources() {
-      const { data, error } = await supabaseClient
-        .from("resources")
-        .select("id, name, quantity, unit")
-        .eq("active", true)
-        .order("id", { ascending: true });
-
-      if (error) {
-        console.error("Ressourcen konnten nicht geladen werden:", error);
-        $("resource-count").textContent = "-";
-        $("resources-list").textContent = "Ressourcen konnten nicht geladen werden.";
-        return;
-      }
-
-      const resources = data || [];
-      $("resource-count").textContent = resources.length;
-
-      if (!resources.length) {
-        $("resources-list").innerHTML = '<p class="empty">Keine aktiven Ressourcen vorhanden.</p>';
-        return;
-      }
-
-      $("resources-list").innerHTML = resources.map(resource => {
-        const quantity = Number(resource.quantity || 0);
-        const formattedQuantity = Number.isInteger(quantity) ? String(quantity) : quantity.toLocaleString("de-DE");
-        const unit = resource.unit ? ` ${escapeHtml(resource.unit)}` : "";
-
-        return `
-          <div class="resource-item">
-            <span>${escapeHtml(resource.name)}</span>
-            <strong>${formattedQuantity}${unit}</strong>
-          </div>
-        `;
-      }).join("");
-      const resourceHtml = $("resources-list").innerHTML;
-      $("resources-page-list").innerHTML = resourceHtml;
-    }
-
-    // =========================================================
-    // AUFTRÄGE
-    // =========================================================
-
-    async function loadOrders() {
-      const { data, error } = await supabaseClient
-        .from("orders")
-        .select(`
-          id,
-          menge,
-          status,
-          created_at,
-          weapons ( name )
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Aufträge konnten nicht geladen werden:", error);
-        $("order-count").textContent = "-";
-        $("orders-list").textContent = "Aufträge konnten nicht geladen werden.";
-        return;
-      }
-
-      const orders = data || [];
-      const closedStatuses = ["Fertig", "Ausgeliefert", "Abgebrochen"];
-      const openOrders = orders.filter(order => !closedStatuses.includes(order.status));
-
-      $("order-count").textContent = openOrders.length;
-
-      if (!orders.length) {
-        $("orders-list").innerHTML = '<p class="empty">Keine Aufträge vorhanden.</p>';
-        return;
-      }
-
-      $("orders-list").innerHTML = orders.map(order => {
-        const weaponName = order.weapons?.name || "Unbekannt";
-        const quantity = Number(order.menge || 0);
-
-        return `
-          <div class="resource-item">
-            <span>#${escapeHtml(order.id)} – ${escapeHtml(weaponName)} × ${quantity}</span>
-            <span class="status">${escapeHtml(order.status || "Unbekannt")}</span>
-          </div>
-        `;
-      }).join("");
-      const orderHtml = $("orders-list").innerHTML;
-      $("orders-page-list").innerHTML = orderHtml;
-    }
-
-    // =========================================================
-    // MITGLIEDERANZAHL
-    // =========================================================
-
-    async function loadMemberCount() {
-      const { data, error } = await supabaseClient
-        .from("members")
-        .select("id")
-        .eq("active", true);
-
-      if (error) {
-        console.error("Mitglieder konnten nicht geladen werden:", error);
-        $("member-count").textContent = "-";
-        return;
-      }
-
-      $("member-count").textContent = (data || []).length;
-    }
-
-    // =========================================================
-    // DASHBOARD LADEN
-    // =========================================================
-
-    async function loadDashboard() {
+<!-- Initialisierung -->
+<div id="loading">Lade Brigade Verwaltung...</div>
+<!-- LOGIN -->
+<section class="auth-container hidden" id="login">
+<div class="auth-card">
+<h1>Brigade Verwaltung</h1>
+<p class="intro">Bitte melde dich mit deinem Brigade-Konto an.</p>
+<form id="login-form" novalidate="">
+<label for="email">E-Mail</label>
+<input autocomplete="email" id="email" placeholder="name@beispiel.de" required="" type="email"/>
+<label for="password">Passwort</label>
+<input autocomplete="current-password" id="password" placeholder="Passwort" required="" type="password"/>
+<button class="primary-button" id="login-button" type="submit">Anmelden</button>
+</form>
+<button class="link-button" id="forgot-password-button" type="button">Passwort vergessen?</button>
+<button class="link-button" id="show-signup-button" type="button">Account erstellen</button>
+<div aria-live="polite" class="message" id="login-message"></div>
+</div>
+</section>
+<!-- REGISTRIERUNG -->
+<section class="auth-container hidden" id="signup">
+<div class="auth-card">
+<h1>Account erstellen</h1>
+<p class="intro">Erstelle dein persönliches Brigade-Konto.</p>
+<form id="signup-form" novalidate="">
+<label for="signup-name">Name</label>
+<input autocomplete="name" id="signup-name" maxlength="100" placeholder="Dein Name" required="" type="text"/>
+<label for="signup-email">E-Mail</label>
+<input autocomplete="email" id="signup-email" placeholder="name@beispiel.de" required="" type="email"/>
+<label for="signup-password">Passwort</label>
+<input autocomplete="new-password" id="signup-password" minlength="6" placeholder="Mindestens 6 Zeichen" required="" type="password"/>
+<label for="signup-confirm-password">Passwort wiederholen</label>
+<input autocomplete="new-password" id="signup-confirm-password" minlength="6" placeholder="Passwort wiederholen" required="" type="password"/>
+<button class="primary-button" id="signup-button" type="submit">Account erstellen</button>
+</form>
+<button class="link-button" id="back-to-login-button" type="button">Zurück zum Login</button>
+<div aria-live="polite" class="message" id="signup-message"></div>
+</div>
+</section>
+<!-- PASSWORT-RESET -->
+<section class="auth-container hidden" id="recovery">
+<div class="auth-card">
+<h1>Neues Passwort</h1>
+<p class="intro">Lege hier ein neues Passwort für dein Brigade-Konto fest.</p>
+<form id="recovery-form" novalidate="">
+<label for="new-password">Neues Passwort</label>
+<input autocomplete="new-password" id="new-password" minlength="6" placeholder="Mindestens 6 Zeichen" required="" type="password"/>
+<label for="confirm-password">Passwort wiederholen</label>
+<input autocomplete="new-password" id="confirm-password" minlength="6" placeholder="Passwort wiederholen" required="" type="password"/>
+<button class="primary-button" id="recovery-button" type="submit">Passwort ändern</button>
+</form>
+<div aria-live="polite" class="message" id="recovery-message"></div>
+</div>
+</section>
+<!-- DASHBOARD -->
+<div id="app">
+<div class="app-shell">
+<header class="app-header">
+<div class="brand">
+<div aria-hidden="true" class="brand-mark">Б</div>
+<div>
+<h1>Brigade</h1>
+<p>Verwaltung der Bruderschaft</p>
+</div>
+</div>
+<div class="user-panel">
+<div class="user-avatar" id="member-avatar">?</div>
+<div class="user-details">
+<div class="user-name" id="member-name">Konto</div>
+<div class="user-rank" id="member-rank">Wird geladen…</div>
+</div>
+<button aria-label="Globale Suche" class="settings-button" id="open-search-button" title="Globale Suche (Strg+K)" type="button">⌕</button>
+<button aria-expanded="false" aria-label="Einstellungen" class="settings-button" id="open-settings-button" title="Einstellungen" type="button">⚙</button>
+<button class="profile-action-button header-profile-button" id="open-profile-button" type="button">Profil</button>
+<button class="logout-button" id="logout-button" type="button">Abmelden</button>
+</div>
+</header>
+<div aria-label="Brigade Einstellungen" class="settings-menu hidden" id="settings-menu" role="dialog">
+<div class="settings-header">
+<h3>Einstellungen</h3>
+<p>Profil und persönliches Seitendesign</p>
+</div>
+<div class="settings-section">
+<div class="settings-title">Mein Profil</div>
+<div class="settings-profile">
+<div class="settings-avatar" id="settings-avatar">?</div>
+<div class="settings-profile-info">
+<div class="settings-profile-name" id="settings-profile-name">Wird geladen…</div>
+<div class="settings-profile-rank" id="settings-profile-rank">Wird geladen…</div>
+</div>
+<button class="settings-profile-button" id="settings-profile-button" type="button">Bearbeiten</button>
+</div>
+</div>
+<div class="settings-section">
+<div class="settings-title">Seitendesign</div>
+<div class="theme-grid">
+<button class="theme-option" data-theme-select="bordeaux" style="--theme-accent:#8b2638" type="button"><div class="theme-preview"><span style="background:#08090b"></span><span style="background:#15171b"></span><span style="background:#8b2638"></span><span style="background:#b99a61"></span></div><div class="theme-name">Bordeaux</div><div class="theme-description">Brigade-Standard</div><div class="theme-check">✓</div></button>
+<button class="theme-option" data-theme-select="steel" style="--theme-accent:#536b7d" type="button"><div class="theme-preview"><span style="background:#080a0c"></span><span style="background:#15191d"></span><span style="background:#536b7d"></span><span style="background:#aeb9bd"></span></div><div class="theme-name">Stahl</div><div class="theme-description">Kühl und sachlich</div><div class="theme-check">✓</div></button>
+<button class="theme-option" data-theme-select="night" style="--theme-accent:#3d5a80" type="button"><div class="theme-preview"><span style="background:#07090d"></span><span style="background:#10151d"></span><span style="background:#3d5a80"></span><span style="background:#9eb6d1"></span></div><div class="theme-name">Nacht</div><div class="theme-description">Dunkles Blau</div><div class="theme-check">✓</div></button>
+<button class="theme-option" data-theme-select="forest" style="--theme-accent:#41634c" type="button"><div class="theme-preview"><span style="background:#080b09"></span><span style="background:#151a17"></span><span style="background:#41634c"></span><span style="background:#a9ad80"></span></div><div class="theme-name">Wald</div><div class="theme-description">Dunkles Grün</div><div class="theme-check">✓</div></button>
+<button class="theme-option" data-theme-select="gold" style="--theme-accent:#876f3f" type="button"><div class="theme-preview"><span style="background:#0a0a08"></span><span style="background:#191814"></span><span style="background:#876f3f"></span><span style="background:#d1b56f"></span></div><div class="theme-name">Gold</div><div class="theme-description">Edel und repräsentativ</div><div class="theme-check">✓</div></button>
+</div>
+</div>
+</div>
+<div aria-labelledby="profile-setup-title" aria-modal="true" class="profile-setup-overlay hidden" id="profile-setup-overlay" role="dialog">
+<div class="profile-setup-card">
+<h2 id="profile-setup-title">Brigade-Profil erstellen</h2>
+<p>Dein Login funktioniert bereits. Jetzt fehlt nur noch dein persönliches Brigade-Profil.</p>
+<div class="profile-note">Beim Erstellen wird zunächst der Rang <strong>Mitglied</strong> und die Rolle <strong>Mitglied</strong> gesetzt. Rang und Rolle können später über die Verwaltung geändert werden.</div>
+<form id="profile-setup-form" novalidate="">
+<label for="profile-name">Brigade-Name</label>
+<input autocomplete="name" id="profile-name" maxlength="100" placeholder="z. B. Uranov Kimsky" required="" type="text"/>
+<button class="primary-button" id="profile-setup-button" type="submit">Brigade-Profil erstellen</button>
+<button class="secondary-button" id="profile-cancel-button" type="button">Später</button>
+</form>
+<div aria-live="polite" class="message" id="profile-setup-message"></div>
+</div>
+</div>
+<div aria-labelledby="profile-edit-title" aria-modal="true" class="profile-setup-overlay hidden" id="profile-edit-overlay" role="dialog">
+<div class="profile-setup-card profile-edit-card">
+<div class="modal-heading-row">
+<div>
+<h2 id="profile-edit-title">Mein Brigade-Profil</h2>
+<p>Gestalte dein persönliches Profil. Rang und Rolle werden von der Verwaltung festgelegt.</p>
+</div>
+<button aria-label="Schließen" class="modal-close" id="profile-edit-close" type="button">×</button>
+</div>
+<div class="profile-preview">
+<div class="profile-preview-avatar" id="profile-edit-avatar">UK</div>
+<div>
+<strong id="profile-preview-name">Uranov Kimsky</strong>
+<span id="profile-preview-rank">Mitglied · Mitglied</span>
+</div>
+</div>
+<form id="profile-edit-form" novalidate="">
+<label for="edit-profile-name">Brigade-Name</label>
+<input autocomplete="name" id="edit-profile-name" maxlength="100" placeholder="Dein Name" required="" type="text"/>
+<label for="edit-profile-motto">Persönliches Motto <span class="label-hint">optional</span></label>
+<input id="edit-profile-motto" maxlength="160" placeholder="z. B. Loyal bis zum Ende." type="text"/>
+<label for="edit-profile-bio">Über mich <span class="label-hint">optional</span></label>
+<textarea id="edit-profile-bio" maxlength="500" placeholder="Ein kurzer Text über dich innerhalb der Brigade..." rows="5"></textarea>
+<div class="profile-edit-actions">
+<button class="primary-button" id="profile-save-button" type="submit">Profil speichern</button>
+<button class="secondary-button" id="profile-edit-cancel" type="button">Abbrechen</button>
+</div>
+</form>
+<div aria-live="polite" class="message" id="profile-edit-message"></div>
+</div>
+</div>
+<div class="app-layout">
+<aside class="sidebar">
+<div class="nav-title">Navigation</div>
+<nav aria-label="Hauptnavigation" class="nav-menu" id="main-navigation">
+<button class="nav-button active" data-page="overview" type="button"><span class="nav-icon">🏠</span>Übersicht</button>
+<button class="nav-button" data-page="members" type="button"><span class="nav-icon">👥</span>Mitglieder</button>
+<button class="nav-button" data-page="finances" type="button"><span class="nav-icon">💰</span>Finanzen</button>
+<button class="nav-button" data-page="resources" type="button"><span class="nav-icon">📦</span>Ressourcen</button>
+<button class="nav-button" data-page="orders" type="button"><span class="nav-icon">📋</span>Aufträge</button>
+<button class="nav-button" data-page="production" type="button"><span class="nav-icon">🏭</span>Produktion</button>
+<button class="nav-button" data-page="weapons" type="button"><span class="nav-icon">🔫</span>Waffen</button>
+<button class="nav-button" data-page="stats" type="button"><span class="nav-icon">📊</span>Statistik</button>
+<button class="nav-button" data-page="chronicle" type="button"><span class="nav-icon">📜</span>Chronik</button>
+<button class="nav-button" data-page="admin" type="button"><span class="nav-icon">⚙️</span>Verwaltung</button>
+</nav>
+<div class="sidebar-motto">
+<strong>ВЕРНОСТЬ · БРАТСТВО</strong>
+<span>LOYALTY · BROTHERHOOD · HONOUR</span>
+</div>
+</aside>
+<main class="content">
+<section class="page active" data-page-content="overview">
+<div class="page-header">
+<h2>Übersicht</h2>
+<p>Die wichtigsten Informationen auf einen Blick.</p>
+</div>
+<div class="card profile-missing-card hidden" id="profile-missing-card" style="margin-bottom:20px;">
+<h3>Dein Brigade-Profil fehlt noch</h3>
+<p>Dein Konto ist angemeldet, aber noch keinem Brigade-Mitglied zugeordnet.</p>
+<button class="profile-action-button" id="open-profile-setup-button" type="button">Profil erstellen</button>
+</div>
+<div class="card profile-summary-card" id="profile-summary-card" style="margin-bottom:20px;">
+<div class="profile-summary-top">
+<div class="profile-summary-avatar" id="profile-summary-avatar">?</div>
+<div class="profile-summary-main">
+<div class="eyebrow">Brigade-Profil</div>
+<h3 id="profile-summary-name">Wird geladen…</h3>
+<div class="profile-summary-rank" id="profile-summary-rank">Wird geladen…</div>
+</div>
+<button class="profile-action-button" id="open-profile-summary-button" type="button">Bearbeiten</button>
+</div>
+<div class="profile-summary-motto" id="profile-summary-motto"></div>
+<p class="profile-summary-bio" id="profile-summary-bio">Dein persönliches Brigade-Profil.</p>
+</div>
+<div class="dashboard">
+<div class="card stat-card"><h3>Brigadekasse</h3><div class="value" id="balance">$0.00</div></div>
+<div class="card stat-card"><h3>Ressourcen</h3><div class="value" id="resource-count">0</div></div>
+<div class="card stat-card"><h3>Offene Aufträge</h3><div class="value" id="order-count">0</div></div>
+<div class="card stat-card"><h3>Aktive Mitglieder</h3><div class="value" id="member-count">-</div></div>
+</div>
+<section class="section">
+<h3>Ressourcenbestand</h3>
+<div class="card"><div class="resource-list" id="resources-list">Lade Ressourcen...</div></div>
+</section>
+<section class="section">
+<h3>Aktuelle Aufträge</h3>
+<div class="card"><div class="orders-list" id="orders-list">Lade Aufträge...</div></div>
+</section>
+<div class="split-grid">
+<section class="section">
+<h3>Letzte Aktivitäten</h3>
+<div class="card">
+<div class="card-header"><span class="muted">Aktuelle Brigade-Ereignisse</span><button class="small-button" id="overview-activity-refresh" type="button">↻</button></div>
+<div id="activity-feed"></div>
+</div>
+</section>
+<section class="section">
+<h3>Hinweise</h3>
+<div class="card">
+<div class="muted" id="notification-count" style="margin-bottom:8px">0 Hinweise</div>
+<div id="notification-list"></div>
+</div>
+</section>
+</div>
+</section>
+<section class="page" data-page-content="members">
+<div class="page-header"><h2>Mitglieder</h2><p>Personalakten, Rollen, Status und Brigade-Zugehörigkeit.</p></div>
+<div class="toolbar"><input class="search" id="member-search" placeholder="Mitglieder durchsuchen…" type="search"/><button class="small-button" id="member-refresh" type="button">↻ Aktualisieren</button></div>
+<div class="card"><div class="table-wrap" id="members-page-list"></div></div>
+</section>
+<section class="page" data-page-content="finances">
+<div class="page-header"><h2>Finanzen</h2><p>Brigadekasse, Einnahmen, Ausgaben und Finanzjournal.</p></div>
+<div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Kontostand</div><div class="kpi-number" id="finance-page-balance">$0.00</div><div class="kpi-sub">USD</div></div><div class="card kpi-card"><div class="kpi-label">Einnahmen</div><div class="kpi-number" id="finance-income">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div><div class="card kpi-card"><div class="kpi-label">Ausgaben</div><div class="kpi-number" id="finance-expense">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div></div>
+<div class="toolbar"><input class="search" id="finance-search" placeholder="Buchungen durchsuchen…" type="search"/><button class="small-button" id="finance-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="finance-add" type="button">＋ Buchung</button></div>
+<div class="card"><div class="table-wrap" id="finance-list"></div></div>
+</section>
+<section class="page" data-page-content="resources">
+<div class="page-header"><h2>Ressourcen</h2><p>Bestände, Mindestbestände und Bewegungen.</p></div>
+<div class="toolbar"><input class="search" id="resource-search" placeholder="Ressource suchen…" type="search"/><button class="small-button" id="resource-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="resource-add" type="button">＋ Bestand ändern</button></div>
+<div class="alert-list" id="resource-alerts" style="margin-bottom:15px"></div><div class="card"><div class="table-wrap" id="resources-page-list"></div></div>
+</section>
+<section class="page" data-page-content="orders">
+<div class="page-header"><h2>Aufträge</h2><p>Vom Eingang bis zur Auslieferung mit Statusverlauf.</p></div>
+<div class="toolbar"><input class="search" id="order-search" placeholder="Aufträge durchsuchen…" type="search"/><button class="small-button" id="order-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="order-add" type="button">＋ Neuer Auftrag</button></div>
+<div class="card"><div class="table-wrap" id="orders-page-list"></div></div>
+</section>
+<section class="page" data-page-content="production">
+<div class="page-header"><h2>Produktion</h2><p>Produktionsjobs, Standorte und Fortschritt.</p></div>
+<div class="toolbar"><input class="search" id="production-search" placeholder="Jobs durchsuchen…" type="search"/><button class="small-button" id="production-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="production-add" type="button">＋ Produktionsjob</button></div>
+<div class="split-grid"><div class="card"><div class="card-header"><h3>Produktionsjobs</h3></div><div class="table-wrap" id="production-list"></div></div><div class="card"><div class="card-header"><h3>Standorte</h3></div><div id="location-list"></div></div></div>
+</section>
+<section class="page" data-page-content="weapons">
+<div class="page-header"><h2>Waffen</h2><p>Fiktive RP-Artikel, Kategorien und hinterlegte Produktionsrezepte.</p></div>
+<div class="toolbar"><input class="search" id="weapon-search" placeholder="Artikel durchsuchen…" type="search"/><button class="small-button" id="weapon-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="weapon-add" type="button">＋ Artikel anlegen</button></div>
+<div class="card"><div class="table-wrap" id="weapons-list"></div></div>
+</section>
+<section class="page" data-page-content="stats">
+<div class="page-header"><h2>Statistik</h2><p>Verdichtete Kennzahlen der Brigade.</p></div>
+<div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Aufträge</div><div class="kpi-number" id="stat-orders">0</div><div class="kpi-sub">Gesamt</div></div><div class="card kpi-card"><div class="kpi-label">Erledigt</div><div class="kpi-number" id="stat-completed">0</div><div class="kpi-sub">Fertig oder ausgeliefert</div></div><div class="card kpi-card"><div class="kpi-label">Aktive Mitglieder</div><div class="kpi-number" id="stat-members">0</div><div class="kpi-sub">Status aktiv</div></div><div class="card kpi-card"><div class="kpi-label">Produktionsjobs</div><div class="kpi-number" id="stat-jobs">0</div><div class="kpi-sub">Gesamt</div></div></div>
+<div class="split-grid"><div class="card"><div class="card-header"><h3>Auftragsstatus</h3></div><div id="stat-order-status"></div></div><div class="card"><div class="card-header"><h3>Artikel-Nachfrage</h3></div><div id="stat-weapons"></div></div></div>
+</section>
+<section class="page" data-page-content="chronicle">
+<div class="page-header"><h2>Chronik</h2><p>Die jüngsten sichtbaren Ereignisse der Brigade.</p></div>
+<div class="toolbar"><button class="small-button" id="chronicle-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="chronicle-print" type="button">🖨 Drucken</button></div>
+<div class="card"><div id="chronicle-list"></div></div>
+</section>
+<section class="page" data-page-content="admin">
+<div class="page-header"><h2>Verwaltung</h2><p>Werkzeuge für Berechtigungen, Systemstatus und Brigade-Chronik.</p></div>
+<div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Deine Rolle</div><div class="kpi-number" id="admin-role" style="font-size:20px">–</div><div class="kpi-sub">Berechtigungsstufe</div></div><div class="card kpi-card"><div class="kpi-label">System</div><div class="kpi-number"><span class="badge success">Online</span></div><div class="kpi-sub">Supabase-Verbindung</div></div><div class="card kpi-card"><div class="kpi-label">Brigadezeit</div><div class="kpi-number" id="brigade-clock" style="font-size:20px">–</div><div class="kpi-sub">Lokale Browserzeit</div></div></div>
+<div class="three-grid"><div class="card"><div class="card-header"><h3>Verwaltungsaktionen</h3></div><button class="ghost-button" id="admin-member-refresh" type="button">Mitglieder neu laden</button><button class="ghost-button" id="admin-system-refresh" style="margin-top:8px" type="button">Dashboard aktualisieren</button></div><div class="card"><div class="card-header"><h3>Brigade-Chronik</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Die Chronik fasst die sichtbaren Aktivitäten aus Aufträgen, Finanzen und Ressourcen zusammen.</p><div id="chronicle-summary"></div></div><div class="card"><div class="card-header"><h3>Persönliche Einstellungen</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Farbschema, Profil und Schnellzugriff findest du über das ⚙-Menü oben rechts.</p><button class="ghost-button" id="admin-open-settings" type="button">⚙ Einstellungen öffnen</button></div></div>
+<div class="card" style="margin-top:15px"><div class="card-header"><h3>Mitglieder &amp; Rollen</h3><span class="badge warning">RLS entscheidet final</span></div><div class="table-wrap" id="admin-members-list"></div></div>
+</section>
+</main>
+</div>
+</div>
+</div>
+<div class="toast-wrap" id="toast-wrap"></div>
+<div class="global-search hidden" id="global-search">
+<div class="search-card">
+<input autocomplete="off" id="global-search-input" placeholder="Suche in Mitgliedern, Aufträgen, Ressourcen und Artikeln…" type="search"/>
+<div class="search-results" id="global-search-results"></div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="action-modal">
+<div class="modal-card">
+<div class="close-row"><div><h3 class="modal-title" id="action-modal-title">Aktion</h3><p class="modal-sub" id="action-modal-sub"></p></div><button class="modal-close" id="action-modal-close" type="button">×</button></div>
+<form id="action-form"></form><div aria-live="polite" class="message" id="action-message"></div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="detail-modal"><div class="modal-card wide"><div class="close-row"><div><h3 class="modal-title" id="detail-title">Details</h3><p class="modal-sub" id="detail-sub"></p></div><button class="modal-close" id="detail-close" type="button">×</button></div><div id="detail-content"></div></div></div>
+<script>
+(() => {
+  "use strict";
+
+  const SUPABASE_URL = "https://gcdmmzchqcwshwiwqafa.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_TjviimwkfAiJALkKUqJKZA_Zpyl7rQC";
+  const $ = id => document.getElementById(id);
+  const qsa = sel => Array.from(document.querySelectorAll(sel));
+  const pages = ["overview","members","finances","resources","orders","production","weapons","stats","chronicle","admin"];
+  const orderStatuses = ["Neu","Angenommen","Ressourcen werden gesammelt","Produktion","Fertig","Ausgeliefert","Abgebrochen"];
+  const themes = ["bordeaux","steel","night","forest","gold"];
+
+  let supabaseClient = null;
+  let currentUser = null;
+  let currentMember = null;
+  let cache = {members:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[], financeBalance:0, currency:"USD"};
+  let recoveryMode = false;
+  let refreshTimer = null;
+
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+  }
+  function money(value, currency = "USD") {
+    try { return new Intl.NumberFormat("en-US", {style:"currency", currency}).format(Number(value || 0)); }
+    catch { return `${Number(value || 0).toFixed(2)} ${currency}`; }
+  }
+  function date(value) {
+    if (!value) return "–";
+    try { return new Intl.DateTimeFormat("de-DE", {dateStyle:"short", timeStyle:"short"}).format(new Date(value)); }
+    catch { return String(value); }
+  }
+  function relative(value) {
+    if (!value) return "–";
+    const mins = Math.round((Date.now() - new Date(value).getTime()) / 60000);
+    if (Math.abs(mins) < 1) return "gerade eben";
+    if (Math.abs(mins) < 60) return `vor ${Math.abs(mins)} Min.`;
+    const hours = Math.round(mins / 60);
+    if (Math.abs(hours) < 24) return `vor ${Math.abs(hours)} Std.`;
+    return `vor ${Math.round(Math.abs(hours) / 24)} Tg.`;
+  }
+  function initials(name) {
+    const p = String(name || "?").trim().split(/\s+/).filter(Boolean);
+    return (p.length ? p.slice(0,2).map(x => x[0]).join("") : "?").toUpperCase();
+  }
+  function toast(text, type = "success") {
+    const wrap = $("toast-wrap"); if (!wrap) return;
+    const el = document.createElement("div"); el.className = `toast ${type}`; el.textContent = text; wrap.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+  function setMessage(el, text, type = "") { if (!el) return; el.textContent = text || ""; el.className = `message ${type}`.trim(); }
+  function errorText(err) { return err?.message || err?.error_description || String(err || "Unbekannter Fehler"); }
+  function empty(title, text) { return `<div class="empty-state"><strong>${esc(title)}</strong><span>${esc(text)}</span></div>`; }
+  function statusBadge(status) {
+    const s = String(status || "Unbekannt");
+    const c = ["Fertig","Ausgeliefert"].includes(s) ? "success" : s === "Abgebrochen" ? "danger" : s === "Produktion" ? "info" : s.includes("Ressourcen") ? "warning" : "";
+    return `<span class="badge ${c}">${esc(s)}</span>`;
+  }
+  function memberName(id) { return cache.members.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
+  function weaponName(id) { return cache.weapons.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
+  function resourceName(id) { return cache.resources.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
+  function canManage() {
+    const r = `${currentMember?.rank || ""} ${currentMember?.role || ""}`.toLowerCase();
+    return ["zar","zakon","stellvertreter","leiter","admin","administrator"].some(x => r.includes(x));
+  }
+  function canCreateOrders() { return canManage() || String(currentMember?.rank || "").toLowerCase().includes("zakon"); }
+
+  function showOnly(id) {
+    ["loading","login","signup","recovery","app"].forEach(x => $(x)?.classList.add("hidden"));
+    $(id)?.classList.remove("hidden");
+  }
+  function showLogin(message = "", type = "") { showOnly("login"); setMessage($("login-message"), message, type); }
+  function showSignup() { showOnly("signup"); setMessage($("signup-message"), ""); }
+  function showRecovery() { showOnly("recovery"); setMessage($("recovery-message"), ""); }
+  function showApp() { showOnly("app"); $("app").style.display = "block"; }
+
+  function recoveryUrl() { return window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type") === "recovery"; }
+  function clearRecoveryUrl() { history.replaceState(null, "", window.location.pathname + window.location.search); }
+
+  function applyTheme(theme) {
+    if (!themes.includes(theme)) theme = "bordeaux";
+    document.body.dataset.theme = theme;
+    localStorage.setItem("brigade-theme", theme);
+    qsa("[data-theme-select]").forEach(b => b.classList.toggle("active", b.dataset.themeSelect === theme));
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = theme === "gold" ? "#876f3f" : "#111827";
+  }
+  function loadTheme() { applyTheme(localStorage.getItem("brigade-theme") || "bordeaux"); }
+
+  function openAction(title, sub, html, handler) {
+    $("action-modal-title").textContent = title; $("action-modal-sub").textContent = sub || "";
+    $("action-form").innerHTML = html; setMessage($("action-message"), ""); $("action-modal").classList.remove("hidden");
+    $("action-form").onsubmit = handler || null;
+  }
+  function closeAction() { $("action-modal")?.classList.add("hidden"); if ($("action-form")) { $("action-form").innerHTML = ""; $("action-form").onsubmit = null; } }
+  function openDetail(title, sub, html) { $("detail-title").textContent = title; $("detail-sub").textContent = sub || ""; $("detail-content").innerHTML = html; $("detail-modal").classList.remove("hidden"); }
+  function closeDetail() { $("detail-modal")?.classList.add("hidden"); }
+
+  async function loadMember() {
+    const {data:{user}, error:userError} = await supabaseClient.auth.getUser();
+    if (userError) throw userError;
+    currentUser = user;
+    if (!user) { showLogin(); return false; }
+    const {data, error} = await supabaseClient.from("members").select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").eq("auth_user_id", user.id).maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      currentMember = null;
       showApp();
-
-      // Ein Fehler bei einer einzelnen Tabelle soll nicht das komplette Dashboard zerstören.
-      await Promise.allSettled([
-        loadMember(),
-        loadFinances(),
-        loadResources(),
-        loadOrders(),
-        loadMemberCount()
-      ]);
+      $("profile-setup-overlay")?.classList.remove("hidden");
+      $("profile-name").value = user.user_metadata?.name || user.email?.split("@")[0] || "";
+      updateHeader();
+      return false;
     }
+    currentMember = data;
+    showApp();
+    $("profile-setup-overlay")?.classList.add("hidden");
+    updateHeader();
+    updateProfileViews();
+    return true;
+  }
 
-    async function checkSession() {
-      if (!supabaseClient) return;
+  function updateHeader() {
+    const name = currentMember?.name || currentUser?.user_metadata?.name || currentUser?.email?.split("@")[0] || "Konto";
+    const rank = currentMember ? `${currentMember.rank || "Mitglied"}${currentMember.role ? ` · ${currentMember.role}` : ""}` : "Profil fehlt";
+    ["member-name","settings-profile-name"].forEach(id => { if ($(id)) $(id).textContent = name; });
+    ["member-rank","settings-profile-rank"].forEach(id => { if ($(id)) $(id).textContent = rank; });
+    ["member-avatar","settings-avatar"].forEach(id => { if ($(id)) $(id).textContent = initials(name); });
+    if ($("admin-role")) $("admin-role").textContent = currentMember?.rank || "Mitglied";
+  }
 
-      try {
-        // Recovery hat immer Vorrang vor dem Dashboard.
-        if (recoveryMode) {
-          showRecovery();
-          return;
-        }
+  function updateProfileViews() {
+    if (!currentMember) return;
+    const motto = currentMember.motto || "Kein persönliches Motto hinterlegt.";
+    const bio = currentMember.bio || "Noch keine persönliche Beschreibung hinterlegt.";
+    ["profile-summary-name"].forEach(id => { if ($(id)) $(id).textContent = currentMember.name || "Mitglied"; });
+    if ($("profile-summary-rank")) $("profile-summary-rank").textContent = `${currentMember.rank || "Mitglied"} · ${currentMember.role || "Mitglied"}`;
+    if ($("profile-summary-motto")) $("profile-summary-motto").textContent = motto;
+    if ($("profile-summary-bio")) $("profile-summary-bio").textContent = bio;
+    if ($("profile-summary-avatar")) $("profile-summary-avatar").textContent = initials(currentMember.name);
+    if ($("profile-preview-name")) $("profile-preview-name").textContent = currentMember.name || "Mitglied";
+    if ($("profile-preview-rank")) $("profile-preview-rank").textContent = `${currentMember.rank || "Mitglied"} · ${currentMember.role || "Mitglied"}`;
+    if ($("profile-edit-avatar")) $("profile-edit-avatar").textContent = initials(currentMember.name);
+    if ($("edit-profile-name")) $("edit-profile-name").value = currentMember.name || "";
+    if ($("edit-profile-motto")) $("edit-profile-motto").value = currentMember.motto || "";
+    if ($("edit-profile-bio")) $("edit-profile-bio").value = currentMember.bio || "";
+  }
 
-        const { data, error } = await supabaseClient.auth.getSession();
+  async function saveProfile(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const name = $("profile-name").value.trim();
+    if (!name) return setMessage($("profile-setup-message"), "Bitte einen Namen eingeben.", "error");
+    const btn = $("profile-setup-button"); btn.disabled = true;
+    const {data, error} = await supabaseClient.from("members").insert({name,rank:"Mitglied",role:"Mitglied",active:true,auth_user_id:currentUser.id}).select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").single();
+    btn.disabled = false;
+    if (error) return setMessage($("profile-setup-message"), `Profil konnte nicht erstellt werden: ${errorText(error)}`, "error");
+    currentMember = data; $("profile-setup-overlay").classList.add("hidden"); updateHeader(); updateProfileViews(); await fetchAll(); toast("Brigade-Profil erstellt.");
+  }
 
-        if (error) {
-          console.error("Session konnte nicht geladen werden:", error);
-          showLogin("Die Anmeldung konnte nicht geprüft werden. Bitte versuche es erneut.", "error");
-          return;
-        }
+  async function saveProfileEdit(e) {
+    e.preventDefault();
+    if (!currentMember || !currentUser) return;
+    const name = $("edit-profile-name").value.trim(); if (!name) return setMessage($("profile-edit-message"), "Bitte einen Namen eingeben.", "error");
+    const btn = $("profile-save-button"); btn.disabled = true;
+    const {data,error} = await supabaseClient.from("members").update({name,motto:$('edit-profile-motto').value.trim(),bio:$('edit-profile-bio').value.trim()}).eq("id",currentMember.id).eq("auth_user_id",currentUser.id).select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").single();
+    btn.disabled = false;
+    if (error) return setMessage($("profile-edit-message"), `Speichern fehlgeschlagen: ${errorText(error)}`, "error");
+    currentMember = data; updateHeader(); updateProfileViews(); closeProfileEdit(); toast("Profil gespeichert."); await fetchAll();
+  }
+  function openProfileEdit() { if (!currentMember) return $("profile-setup-overlay")?.classList.remove("hidden"); updateProfileViews(); $("profile-edit-overlay")?.classList.remove("hidden"); }
+  function closeProfileEdit() { $("profile-edit-overlay")?.classList.add("hidden"); setMessage($("profile-edit-message"),""); }
 
-        if (!data.session) {
-          showLogin();
-          return;
-        }
+  function showPage(name) {
+    if (!pages.includes(name)) name = "overview";
+    qsa("[data-page-content]").forEach(el => el.classList.toggle("active", el.dataset.pageContent === name));
+    qsa("[data-page]").forEach(el => el.classList.toggle("active", el.dataset.page === name));
+    history.replaceState(null,"",`#${name}`);
+    closeSettings();
+    if (name === "overview") renderDashboard();
+  }
 
-        await loadDashboard();
-      } catch (error) {
-        console.error("checkSession:", error);
-        showLogin("Verbindung zur Verwaltung fehlgeschlagen. Bitte Seite neu laden.", "error");
-      }
-    }
+  function closeSettings() { $("settings-menu")?.classList.add("hidden"); $("open-settings-button")?.classList.remove("active"); $("open-settings-button")?.setAttribute("aria-expanded","false"); }
+  function toggleSettings() { const m=$("settings-menu"), b=$("open-settings-button"); if(!m||!b)return; const closed=m.classList.toggle("hidden"); b.classList.toggle("active",!closed); b.setAttribute("aria-expanded",String(!closed)); }
 
-    // =========================================================
-    // AUTH-EVENTS
-    // =========================================================
+  async function fetchAll() {
+    if (!currentUser) return;
+    const results = await Promise.all([
+      supabaseClient.from("members").select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").order("id"),
+      supabaseClient.from("financial_transactions").select("id,created_at,amount,transaction_type,category,beschreibung,mitglied").order("created_at",{ascending:false}).limit(200),
+      supabaseClient.from("resources").select("id,name,quantity,unit,active,created_at").order("id"),
+      supabaseClient.from("orders").select("id,mitglied,weapon,menge,status,notizen,created_at,updated_at").order("created_at",{ascending:false}).limit(200),
+      supabaseClient.from("weapons").select("id,name,category,description,active,created_at").order("id"),
+      supabaseClient.from("production_recipes").select("id,weapon,ressource,menge").order("id"),
+      supabaseClient.from("production_locations").select("id,name,description,active,created_at").order("id"),
+      supabaseClient.from("production_jobs").select("id,auftrag,standort,menge,status,gestartet_am,fertig_am,created_at,mitglied").order("created_at",{ascending:false}).limit(200),
+      supabaseClient.from("brigade_finances").select("balance,currency").eq("id",1).maybeSingle()
+    ]);
+    const [members,finances,resources,orders,weapons,recipes,locations,jobs,fin] = results;
+    for (const [label,res] of Object.entries({members,finances,resources,orders,weapons,recipes,locations,jobs,fin})) if(res.error) console.warn(label,res.error);
+    cache.members = members.data || []; cache.finances = finances.data || []; cache.resources = resources.data || []; cache.orders = orders.data || [];
+    cache.weapons = weapons.data || []; cache.recipes = recipes.data || []; cache.locations = locations.data || []; cache.jobs = jobs.data || [];
+    cache.financeBalance = Number(fin.data?.balance || 0); cache.currency = fin.data?.currency || "USD";
+    renderAll();
+  }
 
-    function registerAuthListener() {
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        // Keine langen async/await-Aufrufe direkt im Auth-Callback.
-        setTimeout(async () => {
-          if (event === "PASSWORD_RECOVERY") {
-            recoveryMode = true;
-            showRecovery();
-            return;
-          }
+  function renderAll() { renderDashboard(); renderMembers(); renderFinances(); renderResources(); renderOrders(); renderProduction(); renderWeapons(); renderStats(); renderChronicle(); renderNotifications(); renderAdmin(); }
 
-          if (event === "SIGNED_OUT") {
-            recoveryMode = false;
-            clearRecoveryUrl();
-            showLogin();
-            return;
-          }
+  function renderDashboard() {
+    if($("balance")) $("balance").textContent = money(cache.financeBalance,cache.currency);
+    if($("order-count")) $("order-count").textContent = cache.orders.filter(o=>!["Fertig","Ausgeliefert","Abgebrochen"].includes(o.status)).length;
+    if($("member-count")) $("member-count").textContent = cache.members.filter(m=>m.active).length;
+    if($("resource-count")) $("resource-count").textContent = cache.resources.filter(r=>r.active !== false).length;
+    if($("finance-page-balance")) $("finance-page-balance").textContent = money(cache.financeBalance,cache.currency);
+    const resources = cache.resources.filter(r=>r.active !== false);
+    if($("resources-list")) $("resources-list").innerHTML = resources.length ? resources.slice(0,8).map(r=>`<div class="resource-row"><div><strong>${esc(r.name)}</strong><span>${esc(r.unit||"")}</span></div><strong>${Number(r.quantity||0).toLocaleString("de-DE")}</strong></div>`).join("") : empty("Keine Ressourcen","Noch keine Ressourcen angelegt.");
+    const orders = cache.orders.filter(o=>!["Fertig","Ausgeliefert","Abgebrochen"].includes(o.status)).slice(0,8);
+    if($("orders-list")) $("orders-list").innerHTML = orders.length ? orders.map(o=>`<div class="order-row"><div><strong>#ORD-${String(o.id).padStart(6,"0")}</strong><span>${esc(weaponName(o.weapon))} × ${Number(o.menge||0)}</span></div>${statusBadge(o.status)}</div>`).join("") : empty("Keine offenen Aufträge","Aktuell sind keine offenen Aufträge vorhanden.");
+    renderActivity();
+  }
 
-          if (event === "SIGNED_IN" && session && !recoveryMode) {
-            await checkSession();
-          }
-        }, 0);
-      });
-    }
+  function renderMembers() {
+    const q = ($( "member-search")?.value || "").toLowerCase();
+    const rows = cache.members.filter(m=>`${m.name||""} ${m.rank||""} ${m.role||""}`.toLowerCase().includes(q));
+    if($("member-count")) $("member-count").textContent = cache.members.filter(m=>m.active).length;
+    const html = rows.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.motto||"")}</div></td><td>${esc(m.rank||"Mitglied")}</td><td>${esc(m.role||"Mitglied")}</td><td>${m.active?'<span class="badge success">Aktiv</span>':'<span class="badge danger">Inaktiv</span>'}</td><td><button class="small-button" data-member-detail="${Number(m.id)}">Akte</button></td></tr>`).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
+    if($("members-page-list")) $("members-page-list").innerHTML=html;
+    if($("admin-members-list")) $("admin-members-list").innerHTML=html;
+  }
 
-    // =========================================================
-    // START
-    // =========================================================
+  function renderFinances() {
+    const q = ($( "finance-search")?.value || "").toLowerCase();
+    const tx = cache.finances.filter(t=>`${t.beschreibung||""} ${t.category||""} ${t.transaction_type||""} ${memberName(t.mitglied)}`.toLowerCase().includes(q));
+    let income=0, expense=0; cache.finances.forEach(t=>{const n=Number(t.amount||0); if(n>=0)income+=n;else expense+=Math.abs(n);});
+    if($("finance-income")) $("finance-income").textContent=money(income,cache.currency); if($("finance-expense")) $("finance-expense").textContent=money(expense,cache.currency);
+    if($("finance-page-balance")) $("finance-page-balance").textContent=money(cache.financeBalance,cache.currency);
+    if($("finance-list")) $("finance-list").innerHTML=tx.length?`<table class="data-table"><thead><tr><th>Datum</th><th>Buchung</th><th>Kategorie</th><th>Mitglied</th><th>Betrag</th></tr></thead><tbody>${tx.map(t=>`<tr><td>${date(t.created_at)}</td><td><strong>${esc(t.beschreibung||"Ohne Beschreibung")}</strong><div class="muted">${esc(t.transaction_type||"")}</div></td><td>${esc(t.category||"–")}</td><td>${esc(memberName(t.mitglied))}</td><td>${money(t.amount,cache.currency)}</td></tr>`).join("")}</tbody></table>`:empty("Keine Buchungen","Noch keine Finanztransaktionen vorhanden.");
+  }
 
-    async function startApp() {
-      try {
-        if (!window.supabase || typeof window.supabase.createClient !== "function") {
-          throw new Error("Supabase JavaScript konnte nicht geladen werden.");
-        }
+  function renderResources() {
+    const q=($( "resource-search")?.value||"").toLowerCase(); const rs=cache.resources.filter(r=>r.active!==false&&`${r.name} ${r.unit}`.toLowerCase().includes(q));
+    const alerts=cache.resources.filter(r=>r.active!==false&&Number(r.quantity||0)<=0);
+    if($("resource-alerts")) $("resource-alerts").innerHTML=alerts.length?alerts.map(r=>`<div class="alert-item danger"><strong>Bestand erschöpft: ${esc(r.name)}</strong><span>Aktueller Bestand: ${Number(r.quantity||0)} ${esc(r.unit||"")}</span></div>`).join(""):empty("Bestände in Ordnung","Keine leeren Ressourcen.");
+    if($("resources-page-list")) $("resources-page-list").innerHTML=rs.length?`<table class="data-table"><thead><tr><th>Ressource</th><th>Bestand</th><th>Einheit</th><th>Status</th><th></th></tr></thead><tbody>${rs.map(r=>{const n=Number(r.quantity||0);return `<tr><td><strong>${esc(r.name)}</strong></td><td>${n.toLocaleString("de-DE")}</td><td>${esc(r.unit||"–")}</td><td>${n<=0?'<span class="badge danger">Leer</span>':n<10?'<span class="badge warning">Niedrig</span>':'<span class="badge success">OK</span>'}</td><td><button class="small-button" data-resource-change="${Number(r.id)}">Bestand</button></td></tr>`;}).join("")}</tbody></table>`:empty("Keine Ressourcen","Noch keine Ressourcen angelegt.");
+  }
 
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
-          }
-        });
+  function renderOrders() {
+    const q=($( "order-search")?.value||"").toLowerCase(); const os=cache.orders.filter(o=>`${o.id} ${o.status||""} ${weaponName(o.weapon)} ${memberName(o.mitglied)}`.toLowerCase().includes(q));
+    if($("orders-page-list")) $("orders-page-list").innerHTML=os.length?`<table class="data-table"><thead><tr><th>Auftrag</th><th>Artikel</th><th>Menge</th><th>Antragsteller</th><th>Status</th><th></th></tr></thead><tbody>${os.map(o=>`<tr><td><strong>#ORD-${String(o.id).padStart(6,"0")}</strong><div class="muted">${date(o.created_at)}</div></td><td>${esc(weaponName(o.weapon))}</td><td>${Number(o.menge||0)}</td><td>${esc(memberName(o.mitglied))}</td><td>${statusBadge(o.status)}</td><td><button class="small-button" data-order-detail="${Number(o.id)}">Akte</button></td></tr>`).join("")}</tbody></table>`:empty("Keine Aufträge","Noch keine Aufträge vorhanden.");
+    if($("order-count")) $("order-count").textContent=os.filter(o=>!["Fertig","Ausgeliefert","Abgebrochen"].includes(o.status)).length;
+  }
 
-        recoveryMode = isRecoveryUrl();
-        registerAuthListener();
+  function renderProduction() {
+    const q=($( "production-search")?.value||"").toLowerCase(); const jobs=cache.jobs.filter(j=>`${j.id} ${j.status||""} ${weaponName(cache.orders.find(o=>Number(o.id)===Number(j.auftrag))?.weapon)} ${memberName(j.mitglied)}`.toLowerCase().includes(q));
+    if($("production-list")) $("production-list").innerHTML=jobs.length?`<table class="data-table"><thead><tr><th>Job</th><th>Auftrag</th><th>Standort</th><th>Menge</th><th>Status</th><th></th></tr></thead><tbody>${jobs.map(j=>`<tr><td><strong>#PRO-${String(j.id).padStart(6,"0")}</strong><div class="muted">${date(j.created_at)}</div></td><td>#ORD-${String(j.auftrag||0).padStart(6,"0")}</td><td>${esc(cache.locations.find(l=>Number(l.id)===Number(j.standort))?.name||"–")}</td><td>${Number(j.menge||0)}</td><td>${statusBadge(j.status)}</td><td><button class="small-button" data-job-detail="${Number(j.id)}">Akte</button></td></tr>`).join("")}</tbody></table>`:empty("Keine Produktionsjobs","Noch keine Produktionsjobs vorhanden.");
+  }
 
-        // Recovery-URL zuerst anzeigen. Supabase verarbeitet den Token parallel.
-        if (recoveryMode) {
-          showRecovery();
-        } else {
-          await checkSession();
-        }
+  function renderWeapons() {
+    const q=($( "weapon-search")?.value||"").toLowerCase(); const ws=cache.weapons.filter(w=>w.active!==false&&`${w.name} ${w.category} ${w.description}`.toLowerCase().includes(q));
+    if($("weapons-list")) $("weapons-list").innerHTML=ws.length?`<table class="data-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Beschreibung</th><th></th></tr></thead><tbody>${ws.map(w=>`<tr><td><strong>${esc(w.name)}</strong></td><td>${esc(w.category||"–")}</td><td>${esc(w.description||"–")}</td><td><button class="small-button" data-weapon-detail="${Number(w.id)}">Akte</button></td></tr>`).join("")}</tbody></table>`:empty("Keine Artikel","Noch keine Artikel angelegt.");
+  }
 
-        startupFinished = true;
-      } catch (error) {
-        console.error("Startfehler:", error);
-        hideAllScreens();
-        loadingElement.classList.remove("hidden");
-        loadingElement.innerHTML = `<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${escapeHtml(getErrorMessage(error))}</div>`;
-      }
-    }
+  function renderStats() {
+    if($("stat-orders")) $("stat-orders").textContent=cache.orders.length;
+    if($("stat-completed")) $("stat-completed").textContent=cache.orders.filter(o=>["Fertig","Ausgeliefert"].includes(o.status)).length;
+    if($("stat-members")) $("stat-members").textContent=cache.members.filter(m=>m.active).length;
+    if($("stat-jobs")) $("stat-jobs").textContent=cache.jobs.length;
+    const counts={}; cache.orders.forEach(o=>counts[o.status||"Unbekannt"]=(counts[o.status||"Unbekannt"]||0)+1); const max=Math.max(1,...Object.values(counts));
+    if($("stat-order-status")) $("stat-order-status").innerHTML=Object.keys(counts).length?Object.entries(counts).map(([k,v])=>`<div class="inline-stat"><span>${esc(k)}</span><strong>${v}</strong></div><div class="progress"><span style="width:${Math.round(v/max*100)}%"></span></div>`).join(""):empty("Keine Daten","Noch keine Aufträge vorhanden.");
+    const demand={}; cache.orders.forEach(o=>{const n=weaponName(o.weapon);demand[n]=(demand[n]||0)+Number(o.menge||0);});
+    if($("stat-weapons")) $("stat-weapons").innerHTML=Object.keys(demand).length?Object.entries(demand).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`<div class="inline-stat"><span>${esc(k)}</span><strong>${v}</strong></div>`).join(""):empty("Keine Daten","Noch keine Aufträge vorhanden.");
+  }
 
+  function renderChronicle() {
+    const acts=[]; cache.orders.forEach(o=>acts.push({date:o.created_at,icon:"📋",title:`Auftrag #ORD-${String(o.id).padStart(6,"0")}`,text:`${weaponName(o.weapon)} × ${o.menge} · ${o.status||"Neu"}`}));
+    cache.finances.forEach(t=>acts.push({date:t.created_at,icon:"💰",title:"Finanzbuchung",text:`${t.beschreibung||t.category||"Buchung"} · ${money(t.amount,cache.currency)}`}));
+    cache.jobs.forEach(j=>acts.push({date:j.created_at,icon:"🏭",title:`Produktionsjob #PRO-${String(j.id).padStart(6,"0")}`,text:`Auftrag #${j.auftrag||"–"} · ${j.status||"Geplant"}`})); acts.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if($("chronicle-list")) $("chronicle-list").innerHTML=acts.length?acts.slice(0,50).map(a=>`<div class="activity-item"><div class="activity-icon">${a.icon}</div><div class="activity-main"><strong>${esc(a.title)}</strong><p>${esc(a.text)}</p></div><div class="activity-time">${date(a.date)}</div></div>`).join(""):empty("Chronik ist leer","Es wurden noch keine Ereignisse erfasst.");
+  }
+  function renderActivity() {
+    const acts=[]; cache.orders.slice(0,10).forEach(o=>acts.push({date:o.created_at,icon:"📋",title:`Auftrag #${o.id} angelegt`,text:`${weaponName(o.weapon)} × ${o.menge} · ${o.status||"Neu"}`})); cache.finances.slice(0,8).forEach(t=>acts.push({date:t.created_at,icon:"💰",title:"Finanzbuchung",text:`${t.beschreibung||t.category||"Buchung"} · ${money(t.amount,cache.currency)}`})); acts.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if($("activity-feed")) $("activity-feed").innerHTML=acts.length?acts.slice(0,12).map(a=>`<div class="activity-item"><div class="activity-icon">${a.icon}</div><div class="activity-main"><strong>${esc(a.title)}</strong><p>${esc(a.text)}</p></div><div class="activity-time">${relative(a.date)}</div></div>`).join(""):empty("Noch keine Aktivität","Sobald Aufträge oder Buchungen vorhanden sind, erscheint hier das Protokoll.");
+  }
+  function renderNotifications() {
+    const alerts=[]; cache.resources.filter(r=>r.active!==false&&Number(r.quantity||0)<=0).forEach(r=>alerts.push({type:"danger",title:`Ressource erschöpft: ${r.name}`,text:"Bestand prüfen und ggf. Nachschub buchen."})); cache.orders.filter(o=>o.status==="Neu").slice(0,5).forEach(o=>alerts.push({type:"warning",title:`Neuer Auftrag #${o.id}`,text:`${weaponName(o.weapon)} wartet auf Bearbeitung.`}));
+    if($("notification-count")) $("notification-count").textContent=alerts.length; if($("notification-list")) $("notification-list").innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item ${a.type}"><strong>${esc(a.title)}</strong><span>${esc(a.text)}</span></div>`).join(""):empty("Alles ruhig","Aktuell keine automatischen Hinweise.");
+  }
+  function renderAdmin() { if($("chronicle-summary")) $("chronicle-summary").innerHTML=`<div class="inline-stat"><span>Mitglieder</span><strong>${cache.members.length}</strong></div><div class="inline-stat"><span>Aufträge</span><strong>${cache.orders.length}</strong></div><div class="inline-stat"><span>Produktionsjobs</span><strong>${cache.jobs.length}</strong></div><div class="inline-stat"><span>Artikel</span><strong>${cache.weapons.length}</strong></div>`; }
 
-    // =========================================================
-    // PRO FEATURES
-    // =========================================================
-    let cache = {members:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[]};
-    const closedOrderStatuses = ["Fertig","Ausgeliefert","Abgebrochen"];
-    const orderStatuses = ["Neu","Angenommen","Ressourcen werden gesammelt","Produktion","Fertig","Ausgeliefert","Abgebrochen"];
+  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; openDetail(m.name||"Mitglied",`${m.rank||"Mitglied"} · ${m.role||"Mitglied"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button></div>`:""}`); }
+  function editMember(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error"); openAction("Mitglied bearbeiten","Rang, Rolle und Status",`<div class="form-grid"><div><label>Rang</label><input id="f-rank" value="${esc(m.rank||"")}" required></div><div><label>Rolle</label><input id="f-role" value="${esc(m.role||"")}" required></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),`Speichern fehlgeschlagen: ${errorText(error)}`,"error");closeAction();closeDetail();await fetchAll();toast("Mitglied aktualisiert.");}); }
 
-    function formatMoney(amount,currency="USD") { try{return new Intl.NumberFormat("en-US",{style:"currency",currency}).format(Number(amount||0));}catch(_){return `${Number(amount||0).toFixed(2)} ${currency}`;} }
-    function formatDate(value){ if(!value)return "–"; try{return new Intl.DateTimeFormat("de-DE",{dateStyle:"short",timeStyle:"short"}).format(new Date(value));}catch(_){return String(value);} }
-    function relativeTime(value){ if(!value)return "–"; const d=new Date(value), diff=Date.now()-d.getTime(), mins=Math.round(diff/60000); if(Math.abs(mins)<1)return "gerade eben"; if(mins<60)return `vor ${Math.abs(mins)} Min.`; const h=Math.round(mins/60); if(h<24)return `vor ${h} Std.`; const days=Math.round(h/24); return `vor ${days} Tg.`; }
-    function toast(text,type="success"){const wrap=$("toast-wrap"),el=document.createElement("div");el.className=`toast ${type}`;el.textContent=text;wrap.appendChild(el);setTimeout(()=>el.remove(),3600);}
-    function canManage(){const r=String(currentMember?.rank||"").toLowerCase(), role=String(currentMember?.role||"").toLowerCase(); return ["zar","zakon","stellvertreter","leiter","admin","administrator"].some(x=>r.includes(x)||role.includes(x));}
-    function canCreateOrders(){const r=String(currentMember?.rank||"").toLowerCase();return r.includes("zar")||r.includes("zakon")||canManage();}
-    function emptyState(title,text){return `<div class="empty-state"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(text)}</span></div>`}
-    function statusBadge(status){const s=String(status||"");let c="";if(["Fertig","Ausgeliefert"].includes(s))c="success";else if(s==="Abgebrochen")c="danger";else if(s==="Produktion")c="info";else if(s.includes("Ressourcen"))c="warning";return `<span class="badge ${c}">${escapeHtml(s||"Unbekannt")}</span>`}
-    function memberName(id){return cache.members.find(m=>Number(m.id)===Number(id))?.name||"Unbekannt"}
-    function weaponName(id){return cache.weapons.find(w=>Number(w.id)===Number(id))?.name||"Unbekannt"}
-    function resourceName(id){return cache.resources.find(r=>Number(r.id)===Number(id))?.name||"Unbekannt"}
-    function openModal(title,sub,html,submitHandler){$("action-modal-title").textContent=title;$("action-modal-sub").textContent=sub||"";$("action-form").innerHTML=html;setMessage($("action-message"),"");$("action-modal").classList.remove("hidden");$("action-form").onsubmit=submitHandler||null;}
-    function closeActionModal(){$("action-modal").classList.add("hidden");$("action-form").innerHTML=""}
-    function openDetail(title,sub,html){$("detail-title").textContent=title;$("detail-sub").textContent=sub||"";$("detail-content").innerHTML=html;$("detail-modal").classList.remove("hidden")}
-    function closeDetail(){$("detail-modal").classList.add("hidden")}
-    $("action-modal-close").addEventListener("click",closeActionModal);$("detail-close").addEventListener("click",closeDetail);$("action-modal").addEventListener("click",e=>{if(e.target===$("action-modal"))closeActionModal()});$("detail-modal").addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
+  function createFinance() {
+    if(!canManage())return toast("Keine Berechtigung für Finanzbuchungen.","error");
+    openAction("Finanzbuchung","Buchung für die gemeinsame Brigadekasse",`<div class="form-grid"><div><label>Betrag</label><input id="f-money" type="number" step="0.01" min="0" required></div><div><label>Art</label><select id="f-money-type" class="select-input"><option value="Einnahme">Einnahme</option><option value="Ausgabe">Ausgabe</option></select></div><div><label>Kategorie</label><input id="f-money-cat" maxlength="80" placeholder="z. B. Verkauf"></div><div><label>Beschreibung</label><input id="f-money-desc" maxlength="180" required></div></div><div class="form-actions"><button class="primary-button" type="submit">Buchen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();let n=Math.abs(Number($("f-money").value||0));if(!n)return setMessage($("action-message"),"Bitte einen Betrag größer als 0 eingeben.","error");if($("f-money-type").value==="Ausgabe")n=-n;const {error}=await supabaseClient.from("financial_transactions").insert({amount:n,transaction_type:$("f-money-type").value,category:$("f-money-cat").value.trim(),beschreibung:$("f-money-desc").value.trim(),mitglied:currentMember?.id||null});if(error)return setMessage($("action-message"),`Buchung fehlgeschlagen: ${errorText(error)}`,"error");const {data:fin}=await supabaseClient.from("brigade_finances").select("balance").eq("id",1).maybeSingle();if(fin){await supabaseClient.from("brigade_finances").update({balance:Number(fin.balance||0)+n,updated_at:new Date().toISOString()}).eq("id",1);}closeAction();await fetchAll();toast("Finanzbuchung gespeichert.");});
+  }
 
-    async function fetchAll(){
-      const requests=[
-        supabaseClient.from("members").select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").order("id"),
-        supabaseClient.from("financial_transactions").select("id,created_at,amount,transaction_type,category,beschreibung,mitglied").order("created_at",{ascending:false}).limit(200),
-        supabaseClient.from("resources").select("id,name,quantity,unit,active,created_at").eq("active",true).order("id"),
-        supabaseClient.from("orders").select("id,mitglied,weapon,menge,status,notizen,created_at,updated_at,weapons(name),members(name)").order("created_at",{ascending:false}).limit(200),
-        supabaseClient.from("weapons").select("id,name,category,description,active,created_at").eq("active",true).order("id"),
-        supabaseClient.from("production_recipes").select("id,weapon,ressource,menge,resources(name,unit),weapons(name)").order("id"),
-        supabaseClient.from("production_locations").select("id,name,description,active,created_at").eq("active",true).order("id"),
-        supabaseClient.from("production_jobs").select("id,auftrag,standort,menge,status,gestartet_am,fertig_am,created_at,mitglied,orders(id,status,weapons(name)),production_locations(name),members(name)").order("created_at",{ascending:false}).limit(200)
-      ];
-      const [members,finances,resources,orders,weapons,recipes,locations,jobs]=await Promise.all(requests);
-      cache.members=members.data||[];cache.finances=finances.data||[];cache.resources=resources.data||[];cache.orders=orders.data||[];cache.weapons=weapons.data||[];cache.recipes=recipes.data||[];cache.locations=locations.data||[];cache.jobs=jobs.data||[];
-      if(members.error)console.warn("members",members.error);if(finances.error)console.warn("financial_transactions",finances.error);if(resources.error)console.warn("resources",resources.error);if(orders.error)console.warn("orders",orders.error);if(weapons.error)console.warn("weapons",weapons.error);if(recipes.error)console.warn("recipes",recipes.error);if(locations.error)console.warn("production_locations",locations.error);if(jobs.error)console.warn("production_jobs",jobs.error);
-      renderMembers();renderFinances();renderResources();renderOrders();renderProduction();renderWeapons();renderAdmin();renderStats();renderChronicle();renderActivity();renderNotifications();
-    }
+  function changeResource(id) {
+    if(!canManage())return toast("Keine Berechtigung für Bestandsänderungen.","error"); const r=cache.resources.find(x=>Number(x.id)===Number(id)); if(!r)return;
+    openAction(`Bestand: ${r.name}`,"Bestand erhöhen oder reduzieren",`<div class="form-grid"><div><label>Änderung</label><input id="f-qty" type="number" step="0.01" required placeholder="z. B. 10 oder -5"></div><div><label>Art</label><select id="f-type" class="select-input"><option value="Zugang">Zugang</option><option value="Verbrauch">Verbrauch</option><option value="Korrektur">Korrektur</option></select></div><div class="full"><label>Beschreibung</label><input id="f-desc" maxlength="180" required placeholder="Warum wurde der Bestand geändert?"></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();let delta=Number($("f-qty").value||0);if(!delta)return setMessage($("action-message"),"Bitte eine Änderung eingeben.","error");if($("f-type").value==="Verbrauch")delta=-Math.abs(delta);else if($("f-type").value==="Zugang")delta=Math.abs(delta);const newQty=Number(r.quantity||0)+delta;if(newQty<0)return setMessage($("action-message"),"Der Bestand kann nicht negativ werden.","error");const u=await supabaseClient.from("resources").update({quantity:newQty}).eq("id",r.id);if(u.error)return setMessage($("action-message"),`Bestand konnte nicht gespeichert werden: ${errorText(u.error)}`,"error");const ins=await supabaseClient.from("resource_transactions").insert({ressource:r.id,menge:delta,transaction_type:$("f-type").value,beschreibung:$("f-desc").value.trim(),mitglied:currentMember?.id||null});if(ins.error)console.warn(ins.error);closeAction();await fetchAll();toast("Bestand aktualisiert.");});
+  }
 
-    function renderMembers(){const q=($("member-search")?.value||"").toLowerCase();const rows=cache.members.filter(m=>`${m.name} ${m.rank} ${m.role}`.toLowerCase().includes(q));$("member-count").textContent=cache.members.filter(m=>m.active).length;$("members-page-list").innerHTML=rows.length?`<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${escapeHtml(m.name||"–")}</strong><div class="muted">${escapeHtml(m.motto||"")}</div></td><td>${escapeHtml(m.rank||"Mitglied")}</td><td>${escapeHtml(m.role||"Mitglied")}</td><td>${m.active?'<span class="badge success">Aktiv</span>':'<span class="badge danger">Inaktiv</span>'}</td><td><button class="small-button" onclick="showMemberDetail(${Number(m.id)})">Akte</button></td></tr>`).join("")}</tbody></table>`:emptyState("Keine Mitglieder","Keine Treffer für diese Suche.");$("admin-members-list").innerHTML=$("members-page-list").innerHTML;}
-    window.showMemberDetail=function(id){const m=cache.members.find(x=>Number(x.id)===Number(id));if(!m)return;openDetail(m.name||"Mitglied",`${m.rank||"Mitglied"} · ${m.role||"Mitglied"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${formatDate(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${escapeHtml(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${escapeHtml(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" onclick="editMember(${Number(m.id)})">Rang/Rolle bearbeiten</button></div>`:""}`)};
-    window.editMember=function(id){const m=cache.members.find(x=>Number(x.id)===Number(id));if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error");openModal("Mitglied bearbeiten","Rang und Rolle der Brigade-Akte ändern",`<div class="form-grid"><div><label>Rang</label><input id="f-rank" value="${escapeHtml(m.rank||"")}" required></div><div><label>Rolle</label><input id="f-role" value="${escapeHtml(m.role||"")}" required></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),"Speichern fehlgeschlagen: "+getErrorMessage(error),"error");toast("Mitglied aktualisiert.");closeActionModal();await fetchAll();await loadMember();});};
+  function createOrder() {
+    if(!canCreateOrders())return toast("Keine Berechtigung zum Erstellen von Aufträgen.","error"); if(!cache.weapons.length)return toast("Zuerst mindestens einen Artikel in Waffen anlegen.","warning");
+    openAction("Neuer Auftrag","Auftrag für einen Artikel anlegen",`<div class="form-grid"><div class="full"><label>Artikel</label><select id="f-weapon" class="select-input" required>${cache.weapons.map(w=>`<option value="${Number(w.id)}">${esc(w.name)}${w.category?` · ${esc(w.category)}`:""}</option>`).join("")}</select></div><div><label>Menge</label><input id="f-qty" type="number" min="1" step="1" value="1" required></div><div><label>Hinweis</label><input id="f-order-note" maxlength="300" placeholder="Optional"></div></div><div class="form-actions"><button class="primary-button" type="submit">Auftrag erstellen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const qty=Math.max(1,parseInt($("f-qty").value||"1",10));const {data,error}=await supabaseClient.from("orders").insert({mitglied:currentMember.id,weapon:Number($("f-weapon").value),menge:qty,status:"Neu",notizen:$("f-order-note").value.trim()}).select("id").single();if(error)return setMessage($("action-message"),`Auftrag konnte nicht erstellt werden: ${errorText(error)}`,"error");if(data){await supabaseClient.from("order_status_history").insert({auftrag:data.id,alter_status:null,neuer_status:"Neu",mitglied:currentMember.id,notiz:"Auftrag erstellt"});}closeAction();await fetchAll();toast("Auftrag erstellt.");});
+  }
 
-    function renderFinances(){const q=($("finance-search")?.value||"").toLowerCase();const tx=cache.finances.filter(t=>`${t.beschreibung||""} ${t.category||""} ${t.transaction_type||""} ${memberName(t.mitglied)}`.toLowerCase().includes(q));let income=0,expense=0;cache.finances.forEach(t=>{const n=Number(t.amount||0);if(n>=0)income+=n;else expense+=Math.abs(n)});$("finance-income").textContent=formatMoney(income);$("finance-expense").textContent=formatMoney(expense);$("finance-list").innerHTML=tx.length?`<table class="data-table"><thead><tr><th>Datum</th><th>Buchung</th><th>Kategorie</th><th>Mitglied</th><th>Betrag</th></tr></thead><tbody>${tx.map(t=>`<tr><td>${formatDate(t.created_at)}</td><td><strong>${escapeHtml(t.beschreibung||"Ohne Beschreibung")}</strong><div class="muted">${escapeHtml(t.transaction_type||"")}</div></td><td>${escapeHtml(t.category||"–")}</td><td>${escapeHtml(memberName(t.mitglied))}</td><td>${formatMoney(t.amount)}</td></tr>`).join("")}</tbody></table>`:emptyState("Keine Buchungen","Noch keine Finanztransaktionen vorhanden.");}
+  function orderDetail(id) {
+    const o=cache.orders.find(x=>Number(x.id)===Number(id)); if(!o)return;
+    const historyPromise=supabaseClient.from("order_status_history").select("id,created_at,alter_status,neuer_status,mitglied,notiz").eq("auftrag",id).order("created_at");
+    historyPromise.then(({data})=>{const timeline=(data||[]).map(h=>`<div class="timeline-item"><strong>${esc(h.neuer_status||"–")}</strong><span>${date(h.created_at)} · ${esc(memberName(h.mitglied))}</span>${h.notiz?`<p>${esc(h.notiz)}</p>`:""}</div>`).join(""); const extra=canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-order-status="${Number(id)}">Status ändern</button></div>`:""; openDetail(`#ORD-${String(o.id).padStart(6,"0")}`,`${weaponName(o.weapon)} · ${o.menge} Stück`, `<div class="detail-grid"><div class="detail-box"><small>Antragsteller</small><strong>${esc(memberName(o.mitglied))}</strong></div><div class="detail-box"><small>Status</small><strong>${statusBadge(o.status)}</strong></div><div class="detail-box"><small>Erstellt</small><strong>${date(o.created_at)}</strong></div><div class="detail-box"><small>Hinweis</small><strong>${esc(o.notizen||"–")}</strong></div></div><div class="detail-section"><h4>Statusverlauf</h4>${timeline||empty("Noch kein Verlauf","Es wurde noch kein Statuswechsel protokolliert.")}</div>${extra}`);});
+  }
+  function changeOrderStatus(id) {
+    if(!canManage())return; const o=cache.orders.find(x=>Number(x.id)===Number(id)); if(!o)return;
+    openAction("Auftragsstatus ändern",`#ORD-${String(id).padStart(6,"0")}`,`<div><label>Neuer Status</label><select id="f-status" class="select-input">${orderStatuses.map(s=>`<option ${s===o.status?"selected":""}>${esc(s)}</option>`).join("")}</select></div><div><label>Notiz</label><input id="f-note" maxlength="300"></div><div class="form-actions"><button class="primary-button" type="submit">Status speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const next=$("f-status").value;if(next===o.status){closeAction();return;}const u=await supabaseClient.from("orders").update({status:next,updated_at:new Date().toISOString()}).eq("id",id);if(u.error)return setMessage($("action-message"),`Status konnte nicht geändert werden: ${errorText(u.error)}`,"error");const h=await supabaseClient.from("order_status_history").insert({auftrag:id,alter_status:o.status,neuer_status:next,mitglied:currentMember?.id||null,notiz:$("f-note").value.trim()});if(h.error)console.warn(h.error);closeAction();closeDetail();await fetchAll();toast("Auftragsstatus aktualisiert.");});
+  }
 
-    function renderResources(){const q=($("resource-search")?.value||"").toLowerCase();const rs=cache.resources.filter(r=>`${r.name} ${r.unit}`.toLowerCase().includes(q));$("resource-count").textContent=cache.resources.length;const alerts=cache.resources.filter(r=>Number(r.quantity||0)<=0);$("resource-alerts").innerHTML=alerts.map(r=>`<div class="alert-item danger"><strong>Bestand erschöpft: ${escapeHtml(r.name)}</strong><span>Der aktuelle Bestand beträgt ${Number(r.quantity||0)}${r.unit?" "+escapeHtml(r.unit):""}.</span></div>`).join("");$("resources-page-list").innerHTML=rs.length?`<table class="data-table"><thead><tr><th>Ressource</th><th>Bestand</th><th>Einheit</th><th>Status</th><th></th></tr></thead><tbody>${rs.map(r=>{const n=Number(r.quantity||0);return `<tr><td><strong>${escapeHtml(r.name)}</strong></td><td>${n.toLocaleString("de-DE")}</td><td>${escapeHtml(r.unit||"–")}</td><td>${n<=0?'<span class="badge danger">Leer</span>':n<10?'<span class="badge warning">Niedrig</span>':'<span class="badge success">OK</span>'}</td><td><button class="small-button" onclick="changeResource(${Number(r.id)})">Bestand</button></td></tr>`}).join("")}</tbody></table>`:emptyState("Keine Ressourcen","Keine aktiven Ressourcen vorhanden.");$("resources-list").innerHTML=rs.slice(0,8).map(r=>`<div class="resource-item"><span>${escapeHtml(r.name)}</span><strong>${Number(r.quantity||0).toLocaleString("de-DE")}${r.unit?" "+escapeHtml(r.unit):""}</strong></div>`).join("")||'<p class="empty">Keine aktiven Ressourcen vorhanden.</p>';}
-    window.changeResource=function(id){const r=cache.resources.find(x=>Number(x.id)===Number(id));if(!r)return;openModal("Bestand ändern",r.name,`<div class="form-grid"><div><label>Änderung</label><input id="f-qty" type="number" step="0.01" value="0" required></div><div><label>Art</label><select id="f-type" class="select-input"><option value="Eingang">Eingang</option><option value="Ausgabe">Ausgabe</option><option value="Korrektur">Korrektur</option></select></div><div class="full"><label>Beschreibung</label><input id="f-desc" maxlength="180" placeholder="z. B. Wareneingang / Verbrauch"></div></div><div class="form-actions"><button class="primary-button" type="submit">Bestand buchen</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();let delta=Number($("f-qty").value||0);if($("f-type").value==="Ausgabe")delta=-Math.abs(delta);else if($("f-type").value==="Eingang")delta=Math.abs(delta);const newQty=Number(r.quantity||0)+delta;if(newQty<0)return setMessage($("action-message"),"Der Bestand kann nicht negativ werden.","error");const u=await supabaseClient.from("resources").update({quantity:newQty}).eq("id",id);if(u.error)return setMessage($("action-message"),"Bestand konnte nicht geändert werden: "+getErrorMessage(u.error),"error");const t=await supabaseClient.from("resource_transactions").insert({ressource:id,menge:Math.abs(delta),transaction_type:$("f-type").value,beschreibung:$("f-desc").value.trim(),mitglied:currentMember?.id||null});if(t.error)console.warn(t.error);toast("Bestand aktualisiert.");closeActionModal();await fetchAll();});};
+  function createProductionJob() {
+    if(!canManage())return toast("Keine Berechtigung für Produktionsjobs.","error"); if(!cache.orders.length)return toast("Zuerst einen Auftrag anlegen.","warning");
+    openAction("Produktionsjob","Einen Auftrag zur Produktion einplanen",`<div class="form-grid"><div class="full"><label>Auftrag</label><select id="f-order" class="select-input" required>${cache.orders.filter(o=>!['Fertig','Ausgeliefert','Abgebrochen'].includes(o.status)).map(o=>`<option value="${Number(o.id)}">#ORD-${String(o.id).padStart(6,"0")} · ${esc(weaponName(o.weapon))} × ${Number(o.menge||0)}</option>`).join("")}</select></div><div><label>Standort</label><select id="f-location" class="select-input"><option value="">Kein Standort</option>${cache.locations.map(l=>`<option value="${Number(l.id)}">${esc(l.name)}</option>`).join("")}</select></div><div><label>Menge</label><input id="f-prod-qty" type="number" min="1" step="1" value="1" required></div><div class="full"><label>Status</label><select id="f-prod-status" class="select-input"><option>Geplant</option><option>Produktion</option><option>Fertig</option><option>Abgebrochen</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Job anlegen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const payload={auftrag:Number($("f-order").value),standort:$("f-location").value?Number($("f-location").value):null,menge:Math.max(1,parseInt($("f-prod-qty").value||"1",10)),status:$("f-prod-status").value,mitglied:currentMember?.id||null};const {error}=await supabaseClient.from("production_jobs").insert(payload);if(error)return setMessage($("action-message"),`Produktionsjob konnte nicht angelegt werden: ${errorText(error)}`,"error");closeAction();await fetchAll();toast("Produktionsjob angelegt.");});
+  }
+  function jobDetail(id) { const j=cache.jobs.find(x=>Number(x.id)===Number(id));if(!j)return;openDetail(`#PRO-${String(id).padStart(6,"0")}`,`Auftrag #${j.auftrag||"–"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${statusBadge(j.status)}</strong></div><div class="detail-box"><small>Standort</small><strong>${esc(cache.locations.find(l=>Number(l.id)===Number(j.standort))?.name||"–")}</strong></div><div class="detail-box"><small>Menge</small><strong>${Number(j.menge||0)}</strong></div><div class="detail-box"><small>Erstellt</small><strong>${date(j.created_at)}</strong></div></div>`); }
 
-    function renderOrders(){const q=($("order-search")?.value||"").toLowerCase();const os=cache.orders.filter(o=>`${o.id} ${o.status} ${o.weapons?.name||weaponName(o.weapon)} ${o.members?.name||memberName(o.mitglied)}`.toLowerCase().includes(q));$("order-count").textContent=cache.orders.filter(o=>!closedOrderStatuses.includes(o.status)).length;$("orders-page-list").innerHTML=os.length?`<table class="data-table"><thead><tr><th>Auftrag</th><th>Artikel</th><th>Menge</th><th>Auftraggeber</th><th>Status</th><th></th></tr></thead><tbody>${os.map(o=>`<tr><td><strong>#ORD-${String(o.id).padStart(6,"0")}</strong><div class="muted">${formatDate(o.created_at)}</div></td><td>${escapeHtml(o.weapons?.name||weaponName(o.weapon))}</td><td>${Number(o.menge||0)}</td><td>${escapeHtml(o.members?.name||memberName(o.mitglied))}</td><td>${statusBadge(o.status)}</td><td><button class="small-button" onclick="showOrderDetail(${Number(o.id)})">Details</button></td></tr>`).join("")}</tbody></table>`:emptyState("Keine Aufträge","Keine Treffer oder noch keine Aufträge vorhanden.");$("orders-list").innerHTML=os.slice(0,8).map(o=>`<div class="resource-item"><span>#${Number(o.id)} – ${escapeHtml(o.weapons?.name||weaponName(o.weapon))} × ${Number(o.menge||0)}</span><span class="status">${escapeHtml(o.status||"Unbekannt")}</span></div>`).join("")||'<p class="empty">Keine Aufträge vorhanden.</p>';}
-    window.showOrderDetail=function(id){const o=cache.orders.find(x=>Number(x.id)===Number(id));if(!o)return;const idx=Math.max(0,orderStatuses.indexOf(o.status));openDetail(`#ORD-${String(o.id).padStart(6,"0")}`,`${o.weapons?.name||weaponName(o.weapon)} × ${Number(o.menge||0)}`,`<div class="timeline">${orderStatuses.map((st,i)=>`<div class="timeline-step ${i<idx?"done ":""}${i===idx?"current":""}"><div class="timeline-dot"></div><div class="timeline-label">${escapeHtml(st)}</div></div>`).join("")}</div><div class="detail-grid"><div class="detail-box"><small>Auftraggeber</small><strong>${escapeHtml(o.members?.name||memberName(o.mitglied))}</strong></div><div class="detail-box"><small>Erstellt</small><strong>${formatDate(o.created_at)}</strong></div><div class="detail-box"><small>Aktualisiert</small><strong>${formatDate(o.updated_at)}</strong></div><div class="detail-box"><small>Notiz</small><strong>${escapeHtml(o.notizen||"Keine Notiz")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" onclick="changeOrderStatus(${Number(o.id)})">Status ändern</button></div>`:""}`)};
-    window.changeOrderStatus=function(id){const o=cache.orders.find(x=>Number(x.id)===Number(id));if(!o)return;openModal("Auftragsstatus ändern",`#ORD-${String(id).padStart(6,"0")}`,`<label>Neuer Status</label><select id="f-status" class="select-input">${orderStatuses.map(s=>`<option ${s===o.status?"selected":""}>${escapeHtml(s)}</option>`).join("")}</select><label>Notiz <span class="label-hint">optional</span></label><textarea id="f-note" rows="3" placeholder="Warum wurde der Status geändert?"></textarea><div class="form-actions"><button class="primary-button" type="submit">Status speichern</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();const ns=$("f-status").value,note=$("f-note").value.trim();const u=await supabaseClient.from("orders").update({status:ns,updated_at:new Date().toISOString()}).eq("id",id);if(u.error)return setMessage($("action-message"),"Status konnte nicht geändert werden: "+getErrorMessage(u.error),"error");const h=await supabaseClient.from("order_status_history").insert({auftrag:id,alter_status:o.status,neuer_status:ns,mitglied:currentMember?.id||null,notiz:note});if(h.error)console.warn(h.error);toast("Auftragsstatus aktualisiert.");closeActionModal();closeDetail();await fetchAll();});};
-    window.createOrder=function(){if(!canCreateOrders())return toast("Aufträge dürfen nur von Zar/Zakon bzw. berechtigten Rollen angelegt werden.","error");const opts=cache.weapons.map(w=>`<option value="${Number(w.id)}">${escapeHtml(w.name)}</option>`).join("");openModal("Neuer Auftrag","Fiktiver RP-Auftrag",`<div class="form-grid"><div class="full"><label>Artikel</label><select id="f-weapon" class="select-input" required>${opts||'<option value="">Keine Artikel angelegt</option>'}</select></div><div><label>Menge</label><input id="f-amount" type="number" min="1" step="1" value="1" required></div><div><label>Auftraggeber</label><select id="f-member" class="select-input"><option value="${Number(currentMember?.id||0)}">${escapeHtml(currentMember?.name||"Aktuelles Mitglied")}</option></select></div><div class="full"><label>Notiz</label><textarea id="f-order-note" rows="3" placeholder="Interne RP-Notiz"></textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">Auftrag erstellen</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("orders").insert({mitglied:Number($("f-member").value)||currentMember?.id,weapon:Number($("f-weapon").value),menge:Number($("f-amount").value),status:"Neu",notizen:$("f-order-note").value.trim(),updated_at:new Date().toISOString()});if(error)return setMessage($("action-message"),"Auftrag konnte nicht erstellt werden: "+getErrorMessage(error),"error");toast("Neuer Auftrag angelegt.");closeActionModal();await fetchAll();});
+  function createWeapon() {
+    if(!canManage())return toast("Keine Berechtigung zum Anlegen von Artikeln.","error");
+    openAction("Artikel anlegen","Neuen Artikel im Brigade-Katalog erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-w-name" maxlength="100" required></div><div><label>Kategorie</label><input id="f-w-cat" maxlength="80" placeholder="z. B. Pistole"></div><div class="full"><label>Beschreibung</label><textarea id="f-w-desc" rows="4" maxlength="500"></textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">Artikel speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("weapons").insert({name:$("f-w-name").value.trim(),category:$("f-w-cat").value.trim(),description:$("f-w-desc").value.trim(),active:true});if(error)return setMessage($("action-message"),`Artikel konnte nicht angelegt werden: ${errorText(error)}`,"error");closeAction();await fetchAll();toast("Artikel angelegt.");});
+  }
+  function weaponDetail(id) { const w=cache.weapons.find(x=>Number(x.id)===Number(id));if(!w)return;const recipes=cache.recipes.filter(r=>Number(r.weapon)===Number(id));openDetail(w.name||"Artikel",w.category||"",`<div class="detail-box"><small>Beschreibung</small><strong>${esc(w.description||"Keine Beschreibung hinterlegt")}</strong></div><div class="detail-section"><h4>Hinterlegte Ressourcen</h4>${recipes.length?recipes.map(r=>`<div class="inline-stat"><span>${esc(resourceName(r.ressource))}</span><strong>${Number(r.menge||0)} ${esc(cache.resources.find(x=>Number(x.id)===Number(r.ressource))?.unit||"")}</strong></div>`).join(""):empty("Keine Rezeptdaten","Für diesen Artikel sind noch keine Ressourcenzuordnungen hinterlegt.")}</div>`); }
 
-    function renderProduction(){const q=($("production-search")?.value||"").toLowerCase();const jobs=cache.jobs.filter(j=>`${j.id} ${j.status} ${j.orders?.weapons?.name||""} ${j.production_locations?.name||""}`.toLowerCase().includes(q));$("production-list").innerHTML=jobs.length?`<table class="data-table"><thead><tr><th>Job</th><th>Auftrag</th><th>Standort</th><th>Status</th><th>Zeiten</th></tr></thead><tbody>${jobs.map(j=>`<tr><td><strong>#PRO-${String(j.id).padStart(6,"0")}</strong><div class="muted">× ${Number(j.menge||0)}</div></td><td>#${Number(j.auftrag||0)} · ${escapeHtml(j.orders?.weapons?.name||"Unbekannt")}</td><td>${escapeHtml(j.production_locations?.name||"–")}</td><td>${statusBadge(j.status)}</td><td><div class="muted">Start: ${formatDate(j.gestartet_am)}<br>Fertig: ${formatDate(j.fertig_am)}</div></td></tr>`).join("")}</tbody></table>`:emptyState("Keine Produktionsjobs","Noch keine Jobs vorhanden.");$("location-list").innerHTML=cache.locations.length?cache.locations.map(l=>`<div class="inline-stat"><span>${escapeHtml(l.name)}</span><strong>${escapeHtml(l.description||"Aktiv")}</strong></div>`).join(""):emptyState("Keine Standorte","Noch keine Produktionsstandorte angelegt.");}
-    window.createProductionJob=function(){if(!canManage())return toast("Keine Berechtigung für Produktionsverwaltung.","error");const orderOpts=cache.orders.filter(o=>!closedOrderStatuses.includes(o.status)).map(o=>`<option value="${Number(o.id)}">#${Number(o.id)} · ${escapeHtml(o.weapons?.name||weaponName(o.weapon))}</option>`).join("");const locOpts=cache.locations.map(l=>`<option value="${Number(l.id)}">${escapeHtml(l.name)}</option>`).join("");openModal("Produktionsjob","Fiktive RP-Produktionsplanung",`<div class="form-grid"><div><label>Auftrag</label><select id="f-order" class="select-input" required>${orderOpts||'<option value="">Keine offenen Aufträge</option>'}</select></div><div><label>Standort</label><select id="f-location" class="select-input" required>${locOpts||'<option value="">Keine Standorte</option>'}</select></div><div><label>Menge</label><input id="f-prod-qty" type="number" min="1" value="1" required></div><div><label>Status</label><select id="f-prod-status" class="select-input"><option>Geplant</option><option>Läuft</option><option>Fertig</option><option>Abgebrochen</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Job anlegen</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("production_jobs").insert({auftrag:Number($("f-order").value),standort:Number($("f-location").value),menge:Number($("f-prod-qty").value),status:$("f-prod-status").value,mitglied:currentMember?.id||null});if(error)return setMessage($("action-message"),"Job konnte nicht angelegt werden: "+getErrorMessage(error),"error");toast("Produktionsjob angelegt.");closeActionModal();await fetchAll();});}
+  function globalSearch() {
+    const q=($( "global-search-input")?.value||"").trim().toLowerCase(); if(!$("global-search-results"))return; if(!q){$("global-search-results").innerHTML=empty("Suche","Beginne mit einem Begriff.");return;}
+    const res=[]; cache.members.filter(x=>`${x.name} ${x.rank} ${x.role}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Mitglied",title:x.name,text:`${x.rank||"Mitglied"} · ${x.role||"Mitglied"}`,page:"members"})); cache.orders.filter(x=>`${x.id} ${x.status} ${weaponName(x.weapon)}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Auftrag",title:`#ORD-${String(x.id).padStart(6,"0")}`,text:`${weaponName(x.weapon)} · ${x.status}`,page:"orders"})); cache.resources.filter(x=>`${x.name} ${x.unit}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Ressource",title:x.name,text:`${x.quantity} ${x.unit||""}`,page:"resources"})); cache.weapons.filter(x=>`${x.name} ${x.category}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Artikel",title:x.name,text:x.category||"",page:"weapons"}));
+    $("global-search-results").innerHTML=res.length?res.map(r=>`<button class="search-result" type="button" data-search-page="${r.page}"><strong>${esc(r.title)}</strong><span>${esc(r.type)} · ${esc(r.text)}</span></button>`).join(""):empty("Keine Treffer","Für diesen Suchbegriff wurde nichts gefunden.");
+  }
 
-    function renderWeapons(){const q=($("weapon-search")?.value||"").toLowerCase();const ws=cache.weapons.filter(w=>`${w.name} ${w.category} ${w.description}`.toLowerCase().includes(q));$("weapons-list").innerHTML=ws.length?`<table class="data-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Beschreibung</th><th>Rezepte</th><th></th></tr></thead><tbody>${ws.map(w=>{const rec=cache.recipes.filter(r=>Number(r.weapon)===Number(w.id));return `<tr><td><strong>${escapeHtml(w.name)}</strong></td><td>${escapeHtml(w.category||"–")}</td><td>${escapeHtml(w.description||"Keine Beschreibung")}</td><td>${rec.length?`<span class="badge info">${rec.length} Rezept${rec.length===1?"":"e"}</span>`:'<span class="badge">Kein Rezept</span>'}</td><td><button class="small-button" onclick="showWeaponDetail(${Number(w.id)})">Details</button></td></tr>`}).join("")}</tbody></table>`:emptyState("Keine Artikel","Noch keine Artikel in der Datenbank.");}
-    window.showWeaponDetail=function(id){const w=cache.weapons.find(x=>Number(x.id)===Number(id));if(!w)return;const rec=cache.recipes.filter(r=>Number(r.weapon)===Number(id));openDetail(w.name,w.category||"Artikel",`<p class="muted" style="line-height:1.55;font-size:11px">${escapeHtml(w.description||"Keine Beschreibung hinterlegt.")}</p><h4 style="font-family:Georgia,serif;margin:20px 0 10px">Hinterlegte Rezeptdaten</h4>${rec.length?rec.map(r=>`<div class="inline-stat"><span>${escapeHtml(r.resources?.name||resourceName(r.ressource))}</span><strong>${Number(r.menge||0)}${r.resources?.unit?" "+escapeHtml(r.resources.unit):""}</strong></div>`).join(""):emptyState("Kein Rezept","Für diesen Artikel ist noch kein Rezept hinterlegt.")}`)};
-    window.createWeapon=function(){if(!canManage())return toast("Keine Berechtigung für Artikelverwaltung.","error");openModal("Artikel anlegen","Fiktiver RP-Katalog",`<div class="form-grid"><div><label>Name</label><input id="f-w-name" required maxlength="100"></div><div><label>Kategorie</label><input id="f-w-cat" maxlength="80" placeholder="Pistole, Gewehr, …"></div><div class="full"><label>Beschreibung</label><textarea id="f-w-desc" rows="4" maxlength="500"></textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">Artikel anlegen</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("weapons").insert({name:$("f-w-name").value.trim(),category:$("f-w-cat").value.trim(),description:$("f-w-desc").value.trim(),active:true});if(error)return setMessage($("action-message"),"Artikel konnte nicht angelegt werden: "+getErrorMessage(error),"error");toast("Artikel angelegt.");closeActionModal();await fetchAll();});}
+  async function login(e) { e.preventDefault(); const email=$("email").value.trim(), password=$("password").value; const b=$("login-button"); b.disabled=true; setMessage($("login-message"),""); const {error}=await supabaseClient.auth.signInWithPassword({email,password}); b.disabled=false; if(error)setMessage($("login-message"),`Anmeldung fehlgeschlagen: ${errorText(error)}`,"error"); }
+  async function signup(e) { e.preventDefault(); const name=$("signup-name").value.trim(),email=$("signup-email").value.trim(),password=$("signup-password").value,confirm=$("signup-confirm-password").value; if(password!==confirm)return setMessage($("signup-message"),"Die Passwörter stimmen nicht überein.","error"); if(password.length<6)return setMessage($("signup-message"),"Das Passwort muss mindestens 6 Zeichen haben.","error"); const b=$("signup-button");b.disabled=true;const redirectTo=window.location.origin+window.location.pathname;const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{name},emailRedirectTo:redirectTo}});b.disabled=false;if(error)return setMessage($("signup-message"),`Registrierung fehlgeschlagen: ${errorText(error)}`,"error");if(data.session){showApp();await loadMember();}else setMessage($("signup-message"),"Konto erstellt. Prüfe ggf. deine E-Mails zur Bestätigung.","success"); }
+  async function forgotPassword(e) { e.preventDefault(); const email=$("email").value.trim(); if(!email)return setMessage($("login-message"),"Bitte zuerst deine E-Mail eingeben.","error"); const b=$("forgot-password-button");b.disabled=true;const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});b.disabled=false;if(error)return setMessage($("login-message"),`Reset fehlgeschlagen: ${errorText(error)}`,"error");setMessage($("login-message"),"Wenn die Adresse bekannt ist, wurde eine Anleitung versendet.","success"); }
+  async function recovery(e) { e.preventDefault(); const p=$("new-password").value,c=$("confirm-password").value;if(p!==c)return setMessage($("recovery-message"),"Die Passwörter stimmen nicht überein.","error");if(p.length<6)return setMessage($("recovery-message"),"Das Passwort muss mindestens 6 Zeichen haben.","error");const b=$("recovery-button");b.disabled=true;const {error}=await supabaseClient.auth.updateUser({password:p});b.disabled=false;if(error)return setMessage($("recovery-message"),`Passwort konnte nicht geändert werden: ${errorText(error)}`,"error");recoveryMode=false;clearRecoveryUrl();showLogin("Passwort geändert. Du kannst dich jetzt anmelden.","success"); }
 
+  async function checkSession() {
+    try {
+      const {data,error}=await supabaseClient.auth.getSession(); if(error)throw error;
+      if(!data.session){showLogin();return;}
+      const ok=await loadMember(); if(ok) await fetchAll();
+    } catch(e) { console.error(e); showLogin(`Verbindung zur Verwaltung fehlgeschlagen: ${errorText(e)}`,"error"); }
+  }
 
-    function renderStats(){
-      $("stat-orders").textContent=cache.orders.length;$("stat-completed").textContent=cache.orders.filter(o=>["Fertig","Ausgeliefert"].includes(o.status)).length;$("stat-members").textContent=cache.members.filter(m=>m.active).length;$("stat-jobs").textContent=cache.jobs.length;
-      const counts={};cache.orders.forEach(o=>counts[o.status||"Unbekannt"]=(counts[o.status||"Unbekannt"]||0)+1);const max=Math.max(1,...Object.values(counts));$("stat-order-status").innerHTML=Object.keys(counts).length?Object.entries(counts).map(([k,v])=>`<div class="inline-stat"><span>${escapeHtml(k)}</span><strong>${v}</strong></div><div class="progress"><span style="width:${Math.round(v/max*100)}%"></span></div>`).join(""):emptyState("Keine Daten","Noch keine Aufträge vorhanden.");
-      const wc={};cache.orders.forEach(o=>{const n=o.weapons?.name||weaponName(o.weapon);wc[n]=(wc[n]||0)+Number(o.menge||0)});$("stat-weapons").innerHTML=Object.keys(wc).length?Object.entries(wc).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>`<div class="inline-stat"><span>${escapeHtml(k)}</span><strong>${v}</strong></div>`).join(""):emptyState("Keine Daten","Noch keine Aufträge vorhanden.");
-    }
-    function renderChronicle(){const acts=[];cache.orders.forEach(o=>acts.push({date:o.created_at,icon:"📋",title:`Auftrag #ORD-${String(o.id).padStart(6,"0")}`,text:`${o.weapons?.name||weaponName(o.weapon)} × ${o.menge} · ${o.status||"Neu"}`}));cache.finances.forEach(t=>acts.push({date:t.created_at,icon:"💰",title:"Finanzbuchung",text:`${t.beschreibung||t.category||"Buchung"} · ${formatMoney(t.amount)}`}));cache.jobs.forEach(j=>acts.push({date:j.created_at,icon:"🏭",title:`Produktionsjob #PRO-${String(j.id).padStart(6,"0")}`,text:`${j.orders?.weapons?.name||"Auftrag"} · ${j.status||"Geplant"}`}));acts.sort((a,b)=>new Date(b.date)-new Date(a.date));$("chronicle-list").innerHTML=acts.length?acts.slice(0,40).map(a=>`<div class="activity-item"><div class="activity-icon">${a.icon}</div><div class="activity-main"><strong>${escapeHtml(a.title)}</strong><p>${escapeHtml(a.text)}</p></div><div class="activity-time">${formatDate(a.date)}</div></div>`).join(""):emptyState("Chronik ist leer","Es wurden noch keine Ereignisse erfasst.");}
+  function registerEvents() {
+    $("login-form")?.addEventListener("submit",login); $("signup-form")?.addEventListener("submit",signup); $("recovery-form")?.addEventListener("submit",recovery);
+    $("show-signup-button")?.addEventListener("click",showSignup); $("back-to-login-button")?.addEventListener("click",showLogin); $("forgot-password-button")?.addEventListener("click",forgotPassword);
+    $("profile-setup-form")?.addEventListener("submit",saveProfile); $("profile-cancel-button")?.addEventListener("click",()=>$("profile-setup-overlay")?.classList.add("hidden"));
+    $("profile-edit-form")?.addEventListener("submit",saveProfileEdit); $("profile-edit-close")?.addEventListener("click",closeProfileEdit); $("profile-edit-cancel")?.addEventListener("click",closeProfileEdit);
+    $("open-profile-button")?.addEventListener("click",openProfileEdit); $("open-profile-setup-button")?.addEventListener("click",()=>$("profile-setup-overlay")?.classList.remove("hidden")); $("open-profile-summary-button")?.addEventListener("click",openProfileEdit);
+    $("logout-button")?.addEventListener("click",async()=>{await supabaseClient.auth.signOut();});
+    $("open-settings-button")?.addEventListener("click",toggleSettings); $("settings-menu")?.addEventListener("click",e=>e.stopPropagation()); $("settings-profile-button")?.addEventListener("click",openProfileEdit); $("admin-open-settings")?.addEventListener("click",toggleSettings);
+    qsa("[data-theme-select]").forEach(b=>b.addEventListener("click",()=>applyTheme(b.dataset.themeSelect)));
+    $("open-search-button")?.addEventListener("click",()=>{$("global-search")?.classList.remove("hidden");$("global-search-input").value="";globalSearch();setTimeout(()=>$("global-search-input")?.focus(),30);});
+    $("global-search")?.addEventListener("click",e=>{if(e.target===$("global-search"))$("global-search").classList.add("hidden")}); $("global-search-input")?.addEventListener("input",globalSearch);
+    qsa("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+    const searchMap={"member-search":renderMembers,"finance-search":renderFinances,"resource-search":renderResources,"order-search":renderOrders,"production-search":renderProduction,"weapon-search":renderWeapons}; Object.entries(searchMap).forEach(([id,fn])=>$(id)?.addEventListener("input",fn));
+    ["member-refresh","finance-refresh","resource-refresh","order-refresh","production-refresh","weapon-refresh","admin-member-refresh","admin-system-refresh","overview-activity-refresh","chronicle-refresh"].forEach(id=>$(id)?.addEventListener("click",fetchAll));
+    $("finance-add")?.addEventListener("click",createFinance); $("resource-add")?.addEventListener("click",()=>{const r=cache.resources[0];if(r)changeResource(r.id);else toast("Zuerst eine Ressource anlegen.","warning")}); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("chronicle-print")?.addEventListener("click",()=>window.print());
+    $("action-modal-close")?.addEventListener("click",closeAction); $("detail-close")?.addEventListener("click",closeDetail); $("action-modal")?.addEventListener("click",e=>{if(e.target===$("action-modal"))closeAction()}); $("detail-modal")?.addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
+    document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
+    document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("open-search-button")?.click();}if(e.key==="Escape"){closeSettings();$("global-search")?.classList.add("hidden");}});
+  }
 
-    window.createFinance=function(){if(!canManage())return toast("Keine Berechtigung für Finanzbuchungen.","error");openModal("Finanzbuchung","Buchung für die gemeinsame Brigadekasse",`<div class="form-grid"><div><label>Betrag</label><input id="f-money" type="number" step="0.01" required placeholder="z. B. 250.00"></div><div><label>Art</label><select id="f-money-type" class="select-input"><option value="Einnahme">Einnahme</option><option value="Ausgabe">Ausgabe</option></select></div><div><label>Kategorie</label><input id="f-money-cat" maxlength="80" placeholder="z. B. Verkauf"></div><div><label>Beschreibung</label><input id="f-money-desc" maxlength="180" required></div></div><div class="form-actions"><button class="primary-button" type="submit">Buchen</button><button class="secondary-button" type="button" onclick="closeActionModal()">Abbrechen</button></div>`,async e=>{e.preventDefault();let n=Math.abs(Number($("f-money").value||0));if($("f-money-type").value==="Ausgabe")n=-n;const {error}=await supabaseClient.from("financial_transactions").insert({amount:n,transaction_type:$("f-money-type").value,category:$("f-money-cat").value.trim(),beschreibung:$("f-money-desc").value.trim(),mitglied:currentMember?.id||null});if(error)return setMessage($("action-message"),"Buchung fehlgeschlagen: "+getErrorMessage(error),"error");const fin=await supabaseClient.from("brigade_finances").select("balance").eq("id",1).maybeSingle();if(!fin.error&&fin.data){const newBalance=Number(fin.data.balance||0)+n;const u=await supabaseClient.from("brigade_finances").update({balance:newBalance,updated_at:new Date().toISOString()}).eq("id",1);if(u.error)console.warn(u.error)}toast("Finanzbuchung gespeichert.");closeActionModal();await fetchAll();await loadFinances();});};
+  function startClock() { if(refreshTimer)clearInterval(refreshTimer); const tick=()=>{const el=$("brigade-clock");if(el)el.textContent=new Intl.DateTimeFormat("de-DE",{dateStyle:"short",timeStyle:"medium"}).format(new Date());};tick();refreshTimer=setInterval(tick,1000); }
 
-    function renderActivity(){const acts=[];cache.orders.slice(0,8).forEach(o=>acts.push({date:o.created_at,icon:"📋",title:`Auftrag #${o.id} angelegt`,text:`${o.weapons?.name||weaponName(o.weapon)} × ${o.menge} · ${o.status}`}));cache.finances.slice(0,6).forEach(t=>acts.push({date:t.created_at,icon:"💰",title:"Finanzbuchung",text:`${t.beschreibung||t.category||"Buchung"} · ${formatMoney(t.amount)}`}));acts.sort((a,b)=>new Date(b.date)-new Date(a.date));$("activity-feed").innerHTML=acts.length?acts.slice(0,10).map(a=>`<div class="activity-item"><div class="activity-icon">${a.icon}</div><div class="activity-main"><strong>${escapeHtml(a.title)}</strong><p>${escapeHtml(a.text)}</p></div><div class="activity-time">${relativeTime(a.date)}</div></div>`).join(""):emptyState("Noch keine Aktivität","Sobald Aufträge oder Buchungen vorhanden sind, erscheint hier das Protokoll.");}
-    function renderNotifications(){const alerts=[];cache.resources.filter(r=>Number(r.quantity||0)<=0).forEach(r=>alerts.push({type:"danger",title:`Ressource erschöpft: ${r.name}`,text:"Bestand prüfen und ggf. Nachschub buchen."}));cache.orders.filter(o=>o.status==="Neu").slice(0,5).forEach(o=>alerts.push({type:"warning",title:`Neuer Auftrag #${o.id}`,text:`${o.weapons?.name||weaponName(o.weapon)} wartet auf Bearbeitung.`}));$("notification-count").textContent=alerts.length;$("notification-list").innerHTML=alerts.length?alerts.slice(0,8).map(a=>`<div class="alert-item ${a.type}"><strong>${escapeHtml(a.title)}</strong><span>${escapeHtml(a.text)}</span></div>`).join(""):emptyState("Alles ruhig","Aktuell keine automatischen Hinweise.");}
-    function renderAdmin(){if(!currentMember)return;$("admin-role").textContent=`${currentMember.rank||"Mitglied"}`;$("chronicle-summary").innerHTML=`<div class="inline-stat"><span>Mitglieder</span><strong>${cache.members.length}</strong></div><div class="inline-stat"><span>Aufträge gesamt</span><strong>${cache.orders.length}</strong></div><div class="inline-stat"><span>Produktionsjobs</span><strong>${cache.jobs.length}</strong></div><div class="inline-stat"><span>Artikel</span><strong>${cache.weapons.length}</strong></div>`;$("admin-members-list").innerHTML=$("members-page-list").innerHTML;}
+  async function boot() {
+    try {
+      loadTheme(); registerEvents(); startClock();
+      if(!window.supabase?.createClient) throw new Error("Supabase JavaScript konnte nicht geladen werden. Bitte Internetverbindung und CDN prüfen.");
+      supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
+      if(recoveryUrl()){recoveryMode=true;showRecovery();return;}
+      await checkSession();
+    } catch(e) { console.error("Startfehler",e); showOnly("loading"); if($("loading")) $("loading").innerHTML=`<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${esc(errorText(e))}</div>`; }
+  }
 
-    function globalSearch(){const q=$("global-search-input").value.trim().toLowerCase();if(!q){$("global-search-results").innerHTML=emptyState("Suche","Beginne mit einem Begriff.");return}const res=[];cache.members.filter(x=>`${x.name} ${x.rank} ${x.role}`.toLowerCase().includes(q)).slice(0,8).forEach(x=>res.push({type:"Mitglied",title:x.name,text:`${x.rank||"Mitglied"} · ${x.role||"Mitglied"}`,page:"members"}));cache.orders.filter(x=>`${x.id} ${x.status} ${x.weapons?.name||weaponName(x.weapon)}`.toLowerCase().includes(q)).slice(0,8).forEach(x=>res.push({type:"Auftrag",title:`#ORD-${String(x.id).padStart(6,"0")}`,text:`${x.weapons?.name||weaponName(x.weapon)} · ${x.status}`,page:"orders"}));cache.resources.filter(x=>`${x.name} ${x.unit}`.toLowerCase().includes(q)).slice(0,8).forEach(x=>res.push({type:"Ressource",title:x.name,text:`${x.quantity} ${x.unit||""}`,page:"resources"}));cache.weapons.filter(x=>`${x.name} ${x.category}`.toLowerCase().includes(q)).slice(0,8).forEach(x=>res.push({type:"Artikel",title:x.name,text:x.category||"",page:"weapons"}));$("global-search-results").innerHTML=res.length?res.map((r,i)=>`<div class="search-result" onclick="showPage('${r.page}');closeGlobalSearch()"><strong>${escapeHtml(r.title)}</strong><span>${escapeHtml(r.type)} · ${escapeHtml(r.text)}</span></div>`).join(""):emptyState("Keine Treffer","Für diesen Suchbegriff wurde nichts gefunden.");}
-    function openGlobalSearch(){$("global-search").classList.remove("hidden");$("global-search-input").value="";globalSearch();setTimeout(()=>$("global-search-input").focus(),20)}function closeGlobalSearch(){$("global-search").classList.add("hidden")}
-    document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openGlobalSearch()}if(e.key==="Escape")closeGlobalSearch()});$("global-search").addEventListener("click",e=>{if(e.target===$("global-search"))closeGlobalSearch()});$("global-search-input").addEventListener("input",globalSearch);
-    window.closeGlobalSearch=closeGlobalSearch;
+  window.showPage=showPage; window.closeActionModal=closeAction; window.closeGlobalSearch=()=>$("global-search")?.classList.add("hidden");
+  document.addEventListener("DOMContentLoaded",boot);
+})();
 
-    ["member-search","finance-search","resource-search","order-search","production-search","weapon-search"].forEach(id=>$(id)?.addEventListener("input",()=>{if(id==="member-search")renderMembers();if(id==="finance-search")renderFinances();if(id==="resource-search")renderResources();if(id==="order-search")renderOrders();if(id==="production-search")renderProduction();if(id==="weapon-search")renderWeapons();}));
-    $("finance-add").addEventListener("click",createFinance);$("chronicle-refresh").addEventListener("click",fetchAll);$("chronicle-print").addEventListener("click",()=>window.print());
-    $("member-refresh").addEventListener("click",fetchAll);$("finance-refresh").addEventListener("click",fetchAll);$("resource-refresh").addEventListener("click",fetchAll);$("order-refresh").addEventListener("click",fetchAll);$("production-refresh").addEventListener("click",fetchAll);$("weapon-refresh").addEventListener("click",fetchAll);$("overview-activity-refresh").addEventListener("click",fetchAll);$("admin-member-refresh").addEventListener("click",fetchAll);$("admin-system-refresh").addEventListener("click",fetchAll);$("resource-add").addEventListener("click",()=>{const r=cache.resources[0];if(r)changeResource(r.id);else toast("Zuerst eine Ressource in Supabase anlegen.","warning")});$("order-add").addEventListener("click",createOrder);$("production-add").addEventListener("click",createProductionJob);$("weapon-add").addEventListener("click",createWeapon);$("admin-open-settings").addEventListener("click",()=>{settingsButton.click()});
-
-    const oldLoadDashboard=loadDashboard;loadDashboard=async function(){await oldLoadDashboard();try{await fetchAll()}catch(e){console.warn("Pro-Daten konnten nicht geladen werden",e)}setInterval(()=>{const el=$("brigade-clock");if(el)el.textContent=new Intl.DateTimeFormat("de-DE",{dateStyle:"short",timeStyle:"medium"}).format(new Date())},1000);};
-
-    }
-        startApp();
-  </script>
+</script>
 </body>
 </html>
