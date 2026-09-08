@@ -391,6 +391,8 @@
 .favorite{border:0;background:transparent;color:#666a72;font-size:16px;padding:2px}.favorite.active{color:var(--gold)}
 @media(max-width:950px){.split-grid,.three-grid{grid-template-columns:1fr}}@media(max-width:650px){.form-grid,.detail-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.modal-card{padding:17px}.toolbar .search{min-width:100%}.toolbar{align-items:stretch}.toolbar button{flex:1}.data-table{min-width:560px}}
 
+  
+.chat-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:15px;min-height:560px}.chat-sidebar,.chat-main{min-width:0}.chat-room-list{max-height:490px;overflow:auto}.chat-room{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #282b31;background:transparent;color:inherit;padding:13px 14px;cursor:pointer}.chat-room:hover,.chat-room.active{background:#1b1e23}.chat-room strong{display:block;font-size:12px}.chat-room span{display:block;color:#777b83;font-size:10px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-empty{padding:25px 15px;color:#777b83;font-size:11px;text-align:center}.chat-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid #30333a}.chat-header h3{margin:0}.chat-messages{height:410px;overflow:auto;padding:15px 4px}.chat-message{display:flex;margin:7px 0}.chat-message.mine{justify-content:flex-end}.chat-bubble{max-width:min(78%,520px);padding:9px 12px;border-radius:12px;background:#1b1e23;border:1px solid #30333a}.chat-message.mine .chat-bubble{background:#2a2024;border-color:#51343d}.chat-meta{font-size:9px;color:#777b83;margin-bottom:4px}.chat-text{font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.chat-compose{border-top:1px solid #30333a;padding-top:12px}.chat-compose-row{display:flex;gap:8px;align-items:flex-end}.chat-compose textarea{min-height:44px;max-height:130px;resize:vertical;margin:0}.emoji-bar{display:flex;flex-wrap:wrap;gap:5px;padding:8px 0}.emoji-button{border:1px solid #30333a;background:#171a1f;border-radius:7px;padding:4px 7px;cursor:pointer;font-size:16px}.emoji-button:hover{background:#22262c}.chat-member-option{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11px}.chat-member-option input{width:auto;margin:0}.chat-status{font-size:10px;color:#777b83}.chat-delete{border:0;background:transparent;color:#777b83;cursor:pointer;font-size:11px}.chat-delete:hover{color:#c56a76}@media(max-width:800px){.chat-layout{grid-template-columns:1fr}.chat-room-list{max-height:240px}.chat-messages{height:360px}}
   </style>
 </head>
 <body>
@@ -554,6 +556,7 @@
 <button class="nav-button" data-page="resources" type="button"><span class="nav-icon">📦</span>Ressourcen</button>
 <button class="nav-button" data-page="orders" type="button"><span class="nav-icon">📋</span>Aufträge</button>
 <button class="nav-button" data-page="production" type="button"><span class="nav-icon">🏭</span>Produktion</button>
+<button class="nav-button" data-page="chat" type="button"><span class="nav-icon">💬</span>Brigade-Chat</button>
 <button class="nav-button" data-page="weapons" type="button"><span class="nav-icon">🔫</span>Waffen</button>
 <button class="nav-button" data-page="stats" type="button"><span class="nav-icon">📊</span>Statistik</button>
 <button class="nav-button" data-page="chronicle" type="button"><span class="nav-icon">📜</span>Chronik</button>
@@ -656,6 +659,13 @@
 <div class="toolbar"><input class="search" id="production-search" placeholder="Jobs durchsuchen…" type="search"/><button class="small-button" id="production-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="production-add" type="button">＋ Produktionsjob</button><button class="small-button" id="production-location-add" type="button">＋ Standort</button></div>
 <div class="split-grid"><div class="card"><div class="card-header"><h3>Produktionsjobs</h3></div><div class="table-wrap" id="production-list"></div></div><div class="card"><div class="card-header"><h3>Standorte</h3></div><div id="location-list"></div></div></div>
 </section>
+<section class="page" data-page-content="chat">
+<div class="page-header"><h2>Brigade-Chat</h2><p>Private Gespräche und Gruppenchats für die Brigade.</p></div>
+<div class="chat-layout">
+<div class="card chat-sidebar"><div class="card-header"><h3>Gespräche</h3><button class="small-button" id="chat-new" type="button">＋ Neuer Chat</button></div><div class="chat-room-list" id="chat-room-list"><div class="chat-empty">Lade Gespräche…</div></div></div>
+<div class="card chat-main"><div class="chat-header"><div><h3 id="chat-title">Kein Gespräch ausgewählt</h3><div class="chat-status" id="chat-subtitle">Wähle links einen Chat aus.</div></div><button class="small-button" id="chat-refresh" type="button">↻</button></div><div class="chat-messages" id="chat-messages"><div class="chat-empty">Noch kein Gespräch ausgewählt.</div></div><div class="chat-compose"><div class="emoji-bar" id="emoji-bar"></div><div class="chat-compose-row"><textarea id="chat-input" maxlength="2000" placeholder="Nachricht schreiben…" disabled></textarea><button class="primary-button" id="chat-send" type="button" disabled>Senden</button></div></div></div>
+</div>
+</section>
 <section class="page" data-page-content="weapons">
 <div class="page-header"><h2>Waffen</h2><p>Fiktive RP-Artikel, Kategorien und hinterlegte Produktionsrezepte.</p></div>
 <div class="toolbar"><input class="search" id="weapon-search" placeholder="Artikel durchsuchen…" type="search"/><button class="small-button" id="weapon-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="weapon-add" type="button">＋ Artikel anlegen</button></div>
@@ -712,6 +722,10 @@
   let currentUser = null;
   let currentMember = null;
   let onlineMembers = new Map();
+  let chatRooms = [];
+  let chatMessages = [];
+  let activeChatRoomId = null;
+  let chatPollTimer = null;
   let onlinePresenceTimer = null;
   let onlinePresenceRunning = false;
   let cache = {members:[], personnel:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[], financeBalance:0, currency:"USD"};
@@ -799,6 +813,8 @@
     if (!allowed && location.hash === "#personnel") showPage("members");
   }
   function canCreateOrders() { return rankLevel(currentMember?.rank)>=11; }
+  function canManageLocations() { return !!currentMember?.active; }
+  function canDeleteLocations() { return canManage(); }
   function canDeleteMember(targetId) {
     const actorRank = rankLevel(currentMember?.rank);
     const targetIdNum = Number(targetId);
@@ -1177,7 +1193,7 @@
   function renderProduction() {
     const q=($( "production-search")?.value||"").toLowerCase(); const jobs=cache.jobs.filter(j=>`${j.id} ${j.status||""} ${weaponName(cache.orders.find(o=>Number(o.id)===Number(j.auftrag))?.weapon)} ${memberName(j.mitglied)}`.toLowerCase().includes(q));
     if($("production-list")) $("production-list").innerHTML=jobs.length?`<table class="data-table"><thead><tr><th>Job</th><th>Auftrag</th><th>Standort</th><th>Menge</th><th>Status</th><th></th></tr></thead><tbody>${jobs.map(j=>`<tr><td><strong>#PRO-${String(j.id).padStart(6,"0")}</strong><div class="muted">${date(j.created_at)}</div></td><td>#ORD-${String(j.auftrag||0).padStart(6,"0")}</td><td>${esc(cache.locations.find(l=>Number(l.id)===Number(j.standort))?.name||"–")}</td><td>${Number(j.menge||0)}</td><td>${statusBadge(j.status)}</td><td><div class="form-actions"><button class="small-button" data-job-detail="${Number(j.id)}">Akte</button><button class="danger-button" data-job-delete="${Number(j.id)}">Löschen</button></div></td></tr>`).join("")}</tbody></table>`:empty("Keine Produktionsjobs","Noch keine Produktionsjobs vorhanden.");
-    if($("location-list")) $("location-list").innerHTML=cache.locations.length?cache.locations.map(l=>`<div class="activity-item location-card"><div class="activity-icon">🏭</div><div class="activity-main"><strong>${esc(l.name)}</strong><p>${esc([l.adresse,l.plz,l.ort].filter(Boolean).join(" · ")||"Keine Adresse hinterlegt")}</p><p><span class="muted">Herstellung:</span> ${esc(l.herstellbar||"Keine Angaben")}</p><p>${esc(l.description||"Keine Standortbeschreibung hinterlegt")}</p>${l.ausstattung?`<p><span class="muted">Ausstattung:</span> ${esc(l.ausstattung)}</p>`:""}</div>${canManage()?`<div class="form-actions"><button class="small-button" data-location-edit="${Number(l.id)}">Bearbeiten</button><button class="danger-button" data-location-delete="${Number(l.id)}">Löschen</button></div>`:""}</div>`).join(""):empty("Keine Standorte","Noch keine Produktionsstandorte angelegt.");
+    if($("location-list")) $("location-list").innerHTML=cache.locations.length?cache.locations.map(l=>`<div class="activity-item location-card"><div class="activity-icon">🏭</div><div class="activity-main"><strong>${esc(l.name)}</strong><p>${esc([l.adresse,l.plz,l.ort].filter(Boolean).join(" · ")||"Keine Adresse hinterlegt")}</p><p><span class="muted">Herstellung:</span> ${esc(l.herstellbar||"Keine Angaben")}</p><p>${esc(l.description||"Keine Standortbeschreibung hinterlegt")}</p>${l.ausstattung?`<p><span class="muted">Ausstattung:</span> ${esc(l.ausstattung)}</p>`:""}</div><div class="form-actions">${canManageLocations()?`<button class="small-button" data-location-edit="${Number(l.id)}">Bearbeiten</button>`:""}${canDeleteLocations()?`<button class="danger-button" data-location-delete="${Number(l.id)}">Löschen</button>`:""}</div></div>`).join(""):empty("Keine Standorte","Noch keine Produktionsstandorte angelegt.");
   }
 
   function renderWeapons() {
@@ -1341,7 +1357,7 @@
   }
 
   async function deleteLocation(id) {
-    if(!canManage()) return toast("Keine Verwaltungsberechtigung.","error");
+    if(!canDeleteLocations()) return toast("Keine Berechtigung zum Löschen von Produktionsstandorten.","error");
     const l=cache.locations.find(x=>Number(x.id)===Number(id)); if(!l)return;
     if(!confirm(`Produktionsstandort „${l.name}“ wirklich löschen?\n\nZugehörige Produktionsjobs werden ebenfalls gelöscht.`))return;
     try {
@@ -1352,8 +1368,8 @@
   }
 
   function createProductionJob() {
-    if(!canManage())return toast("Keine Berechtigung für Produktionsjobs.","error"); if(!cache.orders.length)return toast("Zuerst einen Auftrag anlegen.","warning");
-    openAction("Produktionsjob","Einen Auftrag zur Produktion einplanen",`<div class="form-grid"><div class="full"><label>Auftrag</label><select id="f-order" class="select-input" required>${cache.orders.filter(o=>!['Fertig','Ausgeliefert','Abgebrochen'].includes(o.status)).map(o=>`<option value="${Number(o.id)}">#ORD-${String(o.id).padStart(6,"0")} · ${esc(weaponName(o.weapon))} × ${Number(o.menge||0)}</option>`).join("")}</select></div><div><label>Standort</label><select id="f-location" class="select-input"><option value="">Kein Standort</option>${cache.locations.map(l=>`<option value="${Number(l.id)}">${esc(l.name)}</option>`).join("")}</select></div><div><label>Menge</label><input id="f-prod-qty" type="number" min="1" step="1" value="1" required></div><div class="full"><label>Status</label><select id="f-prod-status" class="select-input"><option>Geplant</option><option>Produktion</option><option>Fertig</option><option>Abgebrochen</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Job anlegen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const payload={auftrag:Number($("f-order").value),standort:$("f-location").value?Number($("f-location").value):null,menge:Math.max(1,parseInt($("f-prod-qty").value||"1",10)),status:$("f-prod-status").value,mitglied:currentMember?.id||null};const {error}=await supabaseClient.from("production_jobs").insert(payload);if(error)return setMessage($("action-message"),`Produktionsjob konnte nicht angelegt werden: ${errorText(error)}`,"error");closeAction();await fetchAll();toast("Produktionsjob angelegt.");});
+    if(!currentMember?.active)return toast("Du musst einem aktiven Brigade-Mitglied zugeordnet sein.","error"); const openOrders=cache.orders.filter(o=>!["Fertig","Ausgeliefert","Abgebrochen"].includes(o.status)); if(!openOrders.length)return toast("Zuerst einen offenen Auftrag anlegen.","warning");
+    openAction("Produktionsjob","Einen Auftrag zur Produktion einplanen",`<div class="form-grid"><div class="full"><label>Auftrag</label><select id="f-order" class="select-input" required>${openOrders.map(o=>`<option value="${Number(o.id)}">#ORD-${String(o.id).padStart(6,"0")} · ${esc(weaponName(o.weapon))} × ${Number(o.menge||0)}</option>`).join("")}</select></div><div><label>Standort</label><select id="f-location" class="select-input"><option value="">Kein Standort</option>${cache.locations.map(l=>`<option value="${Number(l.id)}">${esc(l.name)}</option>`).join("")}</select></div><div><label>Menge</label><input id="f-prod-qty" type="number" min="1" step="1" value="1" required></div><div class="full"><label>Status</label><select id="f-prod-status" class="select-input"><option>Geplant</option><option>Produktion</option><option>Fertig</option><option>Abgebrochen</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Job anlegen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const payload={auftrag:Number($("f-order").value),standort:$("f-location").value?Number($("f-location").value):null,menge:Math.max(1,parseInt($("f-prod-qty").value||"1",10)),status:$("f-prod-status").value,mitglied:currentMember?.id||null};const {error}=await supabaseClient.from("production_jobs").insert(payload);if(error)return setMessage($("action-message"),`Produktionsjob konnte nicht angelegt werden: ${errorText(error)}`,"error");closeAction();await fetchAll();toast("Produktionsjob angelegt.");});
   }
   function jobDetail(id) { const j=cache.jobs.find(x=>Number(x.id)===Number(id));if(!j)return;openDetail(`#PRO-${String(id).padStart(6,"0")}`,`Auftrag #${j.auftrag||"–"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${statusBadge(j.status)}</strong></div><div class="detail-box"><small>Standort</small><strong>${esc(cache.locations.find(l=>Number(l.id)===Number(j.standort))?.name||"–")}</strong></div><div class="detail-box"><small>Menge</small><strong>${Number(j.menge||0)}</strong></div><div class="detail-box"><small>Erstellt</small><strong>${date(j.created_at)}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="danger-button" data-job-delete="${Number(id)}">Produktionsjob löschen</button></div>`:""}`); }
 
@@ -1403,7 +1419,7 @@
   }
 
   function editLocation(id) {
-    if(!canManage()) return toast("Keine Berechtigung zum Bearbeiten von Produktionsstandorten.","error");
+    if(!canManageLocations()) return toast("Keine Berechtigung zum Bearbeiten von Produktionsstandorten.","error");
     const l=cache.locations.find(x=>Number(x.id)===Number(id)); if(!l)return;
     openAction(`Produktionsstandort bearbeiten: ${l.name}`,"Standortdaten ändern",locationForm(l),async e=>{
       e.preventDefault(); const name=$("f-l-name").value.trim(); if(!name)return setMessage($("action-message"),"Bitte einen Namen eingeben.","error");
@@ -1420,6 +1436,52 @@
   }
   function weaponDetail(id) { const w=cache.weapons.find(x=>Number(x.id)===Number(id));if(!w)return;const recipes=cache.recipes.filter(r=>Number(r.weapon)===Number(id));openDetail(w.name||"Artikel",w.category||"",`<div class="detail-box"><small>Beschreibung</small><strong>${esc(w.description||"Keine Beschreibung hinterlegt")}</strong></div><div class="detail-section"><h4>Hinterlegte Ressourcen</h4>${recipes.length?recipes.map(r=>`<div class="inline-stat"><span>${esc(resourceName(r.ressource))}</span><strong>${Number(r.menge||0)} ${esc(cache.resources.find(x=>Number(x.id)===Number(r.ressource))?.unit||"")}</strong></div>`).join(""):empty("Keine Rezeptdaten","Für diesen Artikel sind noch keine Ressourcenzuordnungen hinterlegt.")}</div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="danger-button" data-weapon-delete="${Number(id)}">Artikel löschen</button></div>`:""}`); }
 
+  const CHAT_EMOJIS=["😀","😂","😍","😎","👍","👎","❤️","🔥","💪","🤝","👑","🎉","😄","😅","😉","😐","😡","😭","🙏","💬","📌","✅","❌","⚠️","🎯","🚗","🏭","📋","💰","🥳"];
+  function chatRoomMembers(roomId){return roomId?(window.__chatRoomMembers||[]).filter(x=>Number(x.room_id)===Number(roomId)):[];}
+  function chatRoomTitle(room){return room?.type==="group"?(room.name||"Gruppenchat"):(room.name||"Privater Chat");}
+  async function loadChatRooms(){
+    if(!supabaseClient||!currentMember?.id)return;
+    const {data:all,error:me}=await supabaseClient.from("chat_room_members").select("room_id,member_id,role");
+    if(me){console.warn("Chat-Mitglieder konnten nicht geladen werden:",me);return;}
+    const myRooms=(all||[]).filter(x=>Number(x.member_id)===Number(currentMember.id)).map(x=>Number(x.room_id));
+    window.__chatRoomMembers=all||[];
+    if(!myRooms.length){chatRooms=[];activeChatRoomId=null;renderChatRooms();renderChatMessages();return;}
+    const {data:rooms,error}=await supabaseClient.from("chat_rooms").select("id,name,type,created_by,created_at").in("id",myRooms).order("created_at",{ascending:false});
+    if(error){console.warn("Chats konnten nicht geladen werden:",error);return;}
+    chatRooms=rooms||[];
+    const ids=chatRooms.map(r=>Number(r.id));
+    const {data:roomMembers}=await supabaseClient.from("chat_room_members").select("room_id,member_id,role").in("room_id",ids);window.__chatRoomMembers=roomMembers||all||[];
+    if(!activeChatRoomId&&chatRooms.length)activeChatRoomId=Number(chatRooms[0].id);
+    if(activeChatRoomId&&!ids.includes(Number(activeChatRoomId)))activeChatRoomId=ids[0]||null;
+    renderChatRooms();await loadChatMessages(false);
+  }
+  function renderChatRooms(){
+    const el=$("chat-room-list");if(!el)return;if(!chatRooms.length){el.innerHTML='<div class="chat-empty">Noch keine Gespräche.<br>Erstelle rechts oben einen neuen Chat.</div>';return;}
+    el.innerHTML=chatRooms.map(r=>{const names=chatRoomMembers(r.id).map(x=>memberName(x.member_id)).filter(Boolean);const sub=r.type==="group"?`${names.length} Mitglieder`:names.filter(n=>n!==currentMember?.name).join(", ")||"Privater Chat";return `<button class="chat-room ${Number(r.id)===Number(activeChatRoomId)?"active":""}" data-chat-room="${Number(r.id)}"><strong>${esc(chatRoomTitle(r))}</strong><span>${esc(sub)}</span></button>`}).join("");
+  }
+  async function loadChatMessages(scroll=false){
+    if(!activeChatRoomId){renderChatMessages();return;}
+    const {data,error}=await supabaseClient.from("chat_messages").select("id,room_id,sender_id,content,created_at,edited_at").eq("room_id",activeChatRoomId).order("created_at",{ascending:true}).limit(300);
+    if(error){console.warn("Chat-Nachrichten konnten nicht geladen werden:",error);return;}chatMessages=data||[];renderChatMessages(scroll);
+  }
+  function renderChatMessages(scroll=false){
+    const el=$("chat-messages"),title=$("chat-title"),sub=$("chat-subtitle"),input=$("chat-input"),send=$("chat-send");if(!el)return;const room=chatRooms.find(r=>Number(r.id)===Number(activeChatRoomId));
+    if(!room){if(title)title.textContent="Kein Gespräch ausgewählt";if(sub)sub.textContent="Wähle links einen Chat aus.";el.innerHTML='<div class="chat-empty">Noch kein Gespräch ausgewählt.</div>';if(input)input.disabled=true;if(send)send.disabled=true;return;}
+    if(title)title.textContent=chatRoomTitle(room);if(sub)sub.textContent=room.type==="group"?`${chatRoomMembers(room.id).length} Mitglieder`:(chatRoomMembers(room.id).map(x=>memberName(x.member_id)).filter(n=>n&&n!==currentMember?.name).join(", ")||"Privater Chat");if(input)input.disabled=false;if(send)send.disabled=false;
+    el.innerHTML=chatMessages.length?chatMessages.map(m=>{const mine=Number(m.sender_id)===Number(currentMember?.id);return `<div class="chat-message ${mine?"mine":""}"><div class="chat-bubble"><div class="chat-meta">${esc(memberName(m.sender_id)||"Unbekannt")} · ${esc(date(m.created_at))}</div><div class="chat-text">${esc(m.content)}</div></div></div>`}).join(""):'<div class="chat-empty">Noch keine Nachrichten. Schreib die erste Nachricht.</div>';if(scroll)el.scrollTop=el.scrollHeight;
+  }
+  function insertEmoji(emoji){const input=$("chat-input");if(!input||input.disabled)return;const start=input.selectionStart||input.value.length,end=input.selectionEnd||start;input.value=input.value.slice(0,start)+emoji+input.value.slice(end);input.focus();input.selectionStart=input.selectionEnd=start+emoji.length;}
+  function renderEmojiBar(){const el=$("emoji-bar");if(el)el.innerHTML=CHAT_EMOJIS.map(e=>`<button type="button" class="emoji-button" data-emoji="${e}">${e}</button>`).join("");}
+  async function sendChatMessage(){if(!activeChatRoomId||!currentMember?.id)return;const input=$("chat-input"),content=input?.value.trim();if(!content)return;const send=$("chat-send");if(send)send.disabled=true;const {error}=await supabaseClient.from("chat_messages").insert({room_id:Number(activeChatRoomId),sender_id:Number(currentMember.id),content});if(error){toast(`Nachricht konnte nicht gesendet werden: ${errorText(error)}`,"error");if(send)send.disabled=false;return;}input.value="";await loadChatMessages(true);if(send)send.disabled=false;}
+  function createChat(){
+    if(!currentMember?.active)return toast("Du musst einem aktiven Brigade-Mitglied zugeordnet sein.","error");const others=cache.members.filter(m=>m.active!==false&&Number(m.id)!==Number(currentMember.id));
+    openAction("Neuer Chat","Privaten Chat oder Gruppenchat erstellen",`<div class="form-grid"><div><label>Art</label><select id="f-chat-type" class="select-input"><option value="direct">Privater Chat</option><option value="group">Gruppenchat</option></select></div><div><label>Name <span class="label-hint">bei Gruppe</span></label><input id="f-chat-name" maxlength="80" placeholder="z. B. Führung"></div><div class="full"><label>Mitglieder</label><div id="chat-member-picker">${others.map(m=>`<label class="chat-member-option"><input type="checkbox" name="chat-member" value="${Number(m.id)}"> ${esc(m.name)} · ${esc(rankDisplay(m.rank))}</label>`).join("")||'<div class="chat-empty">Keine weiteren aktiven Mitglieder vorhanden.</div>'}</div><div class="chat-selected" id="chat-selected-help">Privater Chat: genau eine Person auswählen.</div></div></div><div class="form-actions"><button class="primary-button" type="submit">Chat erstellen</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
+      e.preventDefault();const type=$("f-chat-type").value;const selected=[...document.querySelectorAll('input[name="chat-member"]:checked')].map(x=>Number(x.value));if(type==="direct"&&selected.length!==1)return setMessage($("action-message"),"Für einen privaten Chat genau eine Person auswählen.","error");if(type==="group"&&selected.length<1)return setMessage($("action-message"),"Für einen Gruppenchat mindestens eine Person auswählen.","error");const name=$("f-chat-name").value.trim();if(type==="group"&&!name)return setMessage($("action-message"),"Bitte einen Gruppennamen eingeben.","error");
+      if(type==="direct"){const target=selected[0];const existing=chatRooms.find(r=>r.type==="direct"&&chatRoomMembers(r.id).some(x=>Number(x.member_id)===target)&&chatRoomMembers(r.id).some(x=>Number(x.member_id)===Number(currentMember.id)));if(existing){closeAction();activeChatRoomId=Number(existing.id);renderChatRooms();await loadChatMessages(true);return;}}
+      const {data:room,error}=await supabaseClient.from("chat_rooms").insert({name:type==="group"?name:null,type,created_by:Number(currentMember.id)}).select("id,name,type,created_by,created_at").single();if(error)return setMessage($("action-message"),`Chat konnte nicht erstellt werden: ${errorText(error)}`,"error");const rows=[Number(currentMember.id),...selected].filter((v,i,a)=>a.indexOf(v)===i).map(member_id=>({room_id:room.id,member_id,role:member_id===Number(currentMember.id)?"owner":"member"}));const mr=await supabaseClient.from("chat_room_members").insert(rows);if(mr.error){await supabaseClient.from("chat_rooms").delete().eq("id",room.id);return setMessage($("action-message"),`Chat-Mitglieder konnten nicht hinzugefügt werden: ${errorText(mr.error)}`,"error");}closeAction();activeChatRoomId=Number(room.id);await loadChatRooms();toast("Chat erstellt.");
+    });
+  }
+  function setupChat(){renderEmojiBar();$("chat-new")?.addEventListener("click",createChat);$("chat-send")?.addEventListener("click",sendChatMessage);$("chat-refresh")?.addEventListener("click",()=>loadChatRooms());$("chat-input")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChatMessage();}});$("emoji-bar")?.addEventListener("click",e=>{const b=e.target.closest?.("[data-emoji]");if(b)insertEmoji(b.dataset.emoji);});document.addEventListener("click",e=>{const r=e.target.closest?.("[data-chat-room]");if(r){activeChatRoomId=Number(r.dataset.chatRoom);renderChatRooms();loadChatMessages(true);}});if(chatPollTimer)clearInterval(chatPollTimer);chatPollTimer=setInterval(()=>{if(currentUser&&document.visibilityState!=="hidden")loadChatRooms();},3500);}
   function globalSearch() {
     const q=($( "global-search-input")?.value||"").trim().toLowerCase(); if(!$("global-search-results"))return; if(!q){$("global-search-results").innerHTML=empty("Suche","Beginne mit einem Begriff.");return;}
     const res=[]; cache.members.filter(x=>`${x.name} ${x.rank} ${x.role}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Mitglied",title:x.name,text:`${x.rank||"Mitglied"} · ${x.role||"Mitglied"}`,page:"members"})); cache.orders.filter(x=>`${x.id} ${x.status} ${weaponName(x.weapon)}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Auftrag",title:`#ORD-${String(x.id).padStart(6,"0")}`,text:`${weaponName(x.weapon)} · ${x.status}`,page:"orders"})); cache.resources.filter(x=>`${x.name} ${x.unit}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Ressource",title:x.name,text:`${x.quantity} ${x.unit||""}`,page:"resources"})); cache.weapons.filter(x=>`${x.name} ${x.category}`.toLowerCase().includes(q)).slice(0,6).forEach(x=>res.push({type:"Artikel",title:x.name,text:x.category||"",page:"weapons"}));
@@ -1435,11 +1497,12 @@
     try {
       const {data,error}=await supabaseClient.auth.getSession(); if(error)throw error;
       if(!data.session){showLogin();return;}
-      const ok=await loadMember(); if(ok) { await fetchAll(); await setupOnlinePresence(); }
+      const ok=await loadMember(); if(ok) { await fetchAll(); await setupOnlinePresence(); await loadChatRooms(); }
     } catch(e) { console.error(e); showLogin(`Verbindung zur Verwaltung fehlgeschlagen: ${errorText(e)}`,"error"); }
   }
 
   function registerEvents() {
+    setupChat();
     $("login-form")?.addEventListener("submit",login); $("signup-form")?.addEventListener("submit",signup); $("recovery-form")?.addEventListener("submit",recovery);
     $("show-signup-button")?.addEventListener("click",showSignup); $("back-to-login-button")?.addEventListener("click",showLogin); $("forgot-password-button")?.addEventListener("click",forgotPassword);
     $("profile-setup-form")?.addEventListener("submit",saveProfile); $("profile-cancel-button")?.addEventListener("click",()=>$("profile-setup-overlay")?.classList.add("hidden"));
@@ -1473,7 +1536,7 @@
       loadTheme(); registerEvents(); startClock();
       if(!window.supabase?.createClient) throw new Error("Supabase JavaScript konnte nicht geladen werden. Bitte Internetverbindung und CDN prüfen.");
       supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(onlinePresenceTimer) { clearInterval(onlinePresenceTimer); onlinePresenceTimer=null; } onlinePresenceRunning=false; onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
+      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(onlinePresenceTimer) { clearInterval(onlinePresenceTimer); onlinePresenceTimer=null; } onlinePresenceRunning=false; onlineMembers=new Map();chatRooms=[];chatMessages=[];activeChatRoomId=null;currentUser=null;currentMember=null;renderChatRooms();renderChatMessages();showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
       if(recoveryUrl()){recoveryMode=true;showRecovery();return;}
       await checkSession();
     } catch(e) { console.error("Startfehler",e); showOnly("loading"); if($("loading")) $("loading").innerHTML=`<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${esc(errorText(e))}</div>`; }
