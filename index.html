@@ -122,6 +122,21 @@
 
         .login-card button:hover { background: #1d4ed8; }
 
+        .forgot-button {
+            width: 100%;
+            margin-top: 12px;
+            background: transparent !important;
+            border: none !important;
+            color: #93c5fd !important;
+            padding: 8px !important;
+        }
+
+        .forgot-button:hover {
+            background: transparent !important;
+            color: #bfdbfe !important;
+            text-decoration: underline;
+        }
+
         .error { color: #f87171; margin-top: 15px; }
         .success { color: #4ade80; margin-top: 15px; }
 
@@ -176,6 +191,10 @@
 
                 <button type="submit">Anmelden</button>
             </form>
+
+            <button type="button" id="forgot-password-button" class="forgot-button">
+                Passwort vergessen?
+            </button>
 
             <div id="login-message"></div>
         </div>
@@ -274,6 +293,87 @@
     const loginForm = document.getElementById("login-form");
     const loginMessage = document.getElementById("login-message");
     const logoutButton = document.getElementById("logout-button");
+    const forgotPasswordButton = document.getElementById("forgot-password-button");
+    const recoveryElement = document.getElementById("recovery");
+    const recoveryForm = document.getElementById("recovery-form");
+    const recoveryMessage = document.getElementById("recovery-message");
+
+
+    // =====================================================
+    // PASSWORT VERGESSEN
+    // =====================================================
+
+    forgotPasswordButton.addEventListener("click", async function() {
+        const email = document.getElementById("email").value.trim();
+
+        if (!email) {
+            loginMessage.innerHTML =
+                '<div class="error">Bitte zuerst deine E-Mail-Adresse eingeben.</div>';
+            document.getElementById("email").focus();
+            return;
+        }
+
+        forgotPasswordButton.disabled = true;
+        loginMessage.innerHTML =
+            '<div>Passwort-Zurücksetzung wird angefordert...</div>';
+
+        const redirectTo = window.location.origin + window.location.pathname;
+
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo
+        });
+
+        forgotPasswordButton.disabled = false;
+
+        if (error) {
+            loginMessage.innerHTML =
+                `<div class="error">Fehler: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        loginMessage.innerHTML =
+            '<div class="success">Eine E-Mail zum Zurücksetzen des Passworts wurde angefordert. Prüfe deinen Posteingang.</div>';
+    });
+
+
+    // =====================================================
+    // PASSWORT ÄNDERN
+    // =====================================================
+
+    recoveryForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const newPassword = document.getElementById("new-password").value;
+        const confirmPassword = document.getElementById("confirm-password").value;
+
+        if (newPassword !== confirmPassword) {
+            recoveryMessage.innerHTML =
+                '<div class="error">Die Passwörter stimmen nicht überein.</div>';
+            return;
+        }
+
+        const { error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) {
+            recoveryMessage.innerHTML =
+                `<div class="error">Passwort konnte nicht geändert werden: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        recoveryMessage.innerHTML =
+            '<div class="success">Passwort erfolgreich geändert. Du kannst dich jetzt anmelden.</div>';
+
+        setTimeout(async function() {
+            await supabaseClient.auth.signOut();
+            recoveryElement.style.display = "none";
+            loginElement.style.display = "block";
+            recoveryForm.reset();
+            loginMessage.innerHTML =
+                '<div class="success">Dein Passwort wurde geändert. Bitte melde dich an.</div>';
+        }, 1200);
+    });
 
 
     // =====================================================
@@ -550,7 +650,16 @@
     // =====================================================
 
     supabaseClient.auth.onAuthStateChange(async function(event, session) {
+        if (event === "PASSWORD_RECOVERY") {
+            loadingElement.style.display = "none";
+            loginElement.style.display = "none";
+            appElement.style.display = "none";
+            recoveryElement.style.display = "block";
+            return;
+        }
+
         if (event === "SIGNED_OUT") {
+            recoveryElement.style.display = "none";
             appElement.style.display = "none";
             loginElement.style.display = "block";
         }
