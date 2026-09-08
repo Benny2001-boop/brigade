@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Brigade Verwaltung</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #1f2937;
+            padding: 20px 30px;
+            border-bottom: 1px solid #374151;
+        }
+
+        header h1 {
+            font-size: 24px;
+        }
+
+        header p {
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Brigade Verwaltung</h1>
+        <p>Zentrale Verwaltung von Finanzen, Ressourcen und Aufträgen</p>
+    </header>
+
+    <main>
+
+        <section class="dashboard">
+
+            <div class="card">
+                <h2>Brigadekasse</h2>
+                <div class="value">$0</div>
+            </div>
+
+            <div class="card">
+                <h2>Ressourcen</h2>
+                <div class="value">0</div>
+            </div>
+
+            <div class="card">
+                <h2>Offene Aufträge</h2>
+                <div class="value">0</div>
+            </div>
+
+            <div class="card">
+                <h2>Mitglieder</h2>
+                <div class="value">0</div>
+            </div>
+
+        </section>
+
+        <section class="section">
+            <h2>Willkommen</h2>
+
+            <div class="card">
+                <p>
+                    Willkommen im Verwaltungssystem der Brigade.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
