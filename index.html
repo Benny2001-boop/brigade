@@ -303,6 +303,19 @@
     .placeholder-card h3 { margin-top: 0; }
     .placeholder-card p { color: var(--muted); line-height: 1.55; }
 
+    .profile-setup-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(2, 6, 23, .78); backdrop-filter: blur(4px); }
+    .profile-setup-card { width: min(100%, 520px); background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: 0 24px 70px rgba(0,0,0,.4); }
+    .profile-setup-card h2 { margin: 0 0 8px; font-size: 24px; }
+    .profile-setup-card p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+    .profile-setup-card .profile-note { margin: -4px 0 18px; padding: 11px 13px; border: 1px solid #3b4b63; border-radius: 8px; background: #172235; color: #cbd5e1; font-size: 13px; line-height: 1.45; }
+    .secondary-button { width: 100%; margin-top: 10px; padding: 11px 16px; border: 1px solid var(--border); border-radius: 7px; background: #374151; color: var(--text); }
+    .secondary-button:hover:not(:disabled) { background: #475569; }
+    .profile-action-button { margin: 0; padding: 7px 10px; border: 1px solid #3b82f6; border-radius: 7px; background: #1d4ed8; color: #fff; white-space: nowrap; font-size: 12px; }
+    .profile-action-button:hover:not(:disabled) { background: #2563eb; }
+    .profile-missing-card { border-color: #3b4b63; background: #172235; }
+    .profile-missing-card h3 { margin: 0 0 7px; }
+    .profile-missing-card p { margin: 0 0 14px; color: var(--muted); line-height: 1.5; }
+
     @media (max-width: 800px) {
       .app-header { padding: 16px 18px; }
       .app-layout { grid-template-columns: 1fr; }
@@ -413,6 +426,21 @@
         </div>
       </header>
 
+      <div id="profile-setup-overlay" class="profile-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-setup-title">
+        <div class="profile-setup-card">
+          <h2 id="profile-setup-title">Brigade-Profil erstellen</h2>
+          <p>Dein Login funktioniert bereits. Jetzt fehlt nur noch dein persönliches Brigade-Profil.</p>
+          <div class="profile-note">Beim Erstellen wird zunächst der Rang <strong>Mitglied</strong> und die Rolle <strong>Mitglied</strong> gesetzt. Rang und Rolle können später über die Verwaltung geändert werden.</div>
+          <form id="profile-setup-form" novalidate>
+            <label for="profile-name">Brigade-Name</label>
+            <input id="profile-name" type="text" required maxlength="100" autocomplete="name" placeholder="z. B. Uranov Kimsky">
+            <button id="profile-setup-button" class="primary-button" type="submit">Brigade-Profil erstellen</button>
+            <button id="profile-cancel-button" class="secondary-button" type="button">Später</button>
+          </form>
+          <div id="profile-setup-message" class="message" aria-live="polite"></div>
+        </div>
+      </div>
+
       <div class="app-layout">
         <aside class="sidebar">
           <div class="nav-title">Navigation</div>
@@ -433,6 +461,12 @@
             <div class="page-header">
               <h2>Übersicht</h2>
               <p>Die wichtigsten Informationen auf einen Blick.</p>
+            </div>
+
+            <div id="profile-missing-card" class="card profile-missing-card hidden" style="margin-bottom:20px;">
+              <h3>Dein Brigade-Profil fehlt noch</h3>
+              <p>Dein Konto ist angemeldet, aber noch keinem Brigade-Mitglied zugeordnet.</p>
+              <button id="open-profile-setup-button" class="profile-action-button" type="button">Profil erstellen</button>
             </div>
 
             <div class="dashboard">
@@ -523,6 +557,8 @@
     const signupElement = $("signup");
     const recoveryElement = $("recovery");
     const appElement = $("app");
+    const profileSetupOverlay = $("profile-setup-overlay");
+    const profileSetupForm = $("profile-setup-form");
 
     const loginForm = $("login-form");
     const signupForm = $("signup-form");
@@ -633,7 +669,72 @@
       button.textContent = loading ? loadingText : normalText;
     }
 
+    function showProfileSetup(prefillName = "") {
+      profileSetupOverlay.classList.remove("hidden");
+      $("profile-name").value = prefillName || $("profile-name").value || "";
+      setMessage($("profile-setup-message"), "");
+      setTimeout(() => $("profile-name").focus(), 50);
+    }
+
+    function hideProfileSetup() {
+      profileSetupOverlay.classList.add("hidden");
+    }
+
+    function setProfileMissing(show) {
+      $("profile-missing-card").classList.toggle("hidden", !show);
+    }
+
     initNavigation();
+
+    // =========================================================
+    // PROFIL ERSTELLEN
+    // =========================================================
+
+    $("open-profile-setup-button").addEventListener("click", () => {
+      showProfileSetup($("member-name").textContent !== "Konto" ? $("member-name").textContent : "");
+    });
+
+    $("profile-cancel-button").addEventListener("click", hideProfileSetup);
+
+    profileSetupForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const name = $("profile-name").value.trim();
+      const button = $("profile-setup-button");
+      setMessage($("profile-setup-message"), "");
+
+      if (!name) {
+        setMessage($("profile-setup-message"), "Bitte einen Brigade-Namen eingeben.", "error");
+        return;
+      }
+
+      setButtonLoading(button, true, "Profil wird erstellt...", "Brigade-Profil erstellen");
+      try {
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !user) throw userError || new Error("Kein angemeldeter Benutzer gefunden.");
+
+        const { data, error } = await supabaseClient.from("members").insert({
+          name, rank: "Mitglied", role: "Mitglied", active: true, auth_user_id: user.id
+        }).select("id, name, rank, role, active").single();
+
+        if (error) {
+          if (String(error.code || "").toLowerCase() === "23505") {
+            await loadMember();
+            hideProfileSetup();
+            return;
+          }
+          throw error;
+        }
+        if (!data) throw new Error("Das Profil wurde nicht zurückgegeben.");
+        setProfileMissing(false);
+        hideProfileSetup();
+        await loadMember();
+      } catch (error) {
+        console.error("Profil konnte nicht erstellt werden:", error);
+        setMessage($("profile-setup-message"), "Profil konnte nicht erstellt werden: " + getErrorMessage(error), "error");
+      } finally {
+        setButtonLoading(button, false, "Profil wird erstellt...", "Brigade-Profil erstellen");
+      }
+    });
 
     // =========================================================
     // LOGIN
@@ -896,11 +997,11 @@
 
     async function loadMember() {
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-
       if (userError || !user) {
         $("member-name").textContent = "Konto";
         $("member-rank").textContent = "Nicht angemeldet";
         $("member-avatar").textContent = "?";
+        setProfileMissing(false);
         return;
       }
 
@@ -908,26 +1009,25 @@
       $("member-name").textContent = authName;
       $("member-avatar").textContent = authName.trim().slice(0, 2) || "?";
 
-      const { data, error } = await supabaseClient
-        .from("members")
-        .select("name, rank, role")
+      const { data, error } = await supabaseClient.from("members")
+        .select("id, name, rank, role, active")
         .eq("auth_user_id", user.id)
         .eq("active", true)
         .maybeSingle();
 
-      if (error) {
+      if (error || !data) {
         console.error("Mitglied konnte nicht geladen werden:", error);
-        $("member-rank").textContent = "Brigade-Profil nicht verfügbar";
+        $("member-rank").textContent = "Profil einrichten";
+        setProfileMissing(true);
+        showProfileSetup(authName);
         return;
       }
 
-      if (!data) {
-        $("member-rank").textContent = "Noch nicht zugeordnet";
-        return;
-      }
-
-      $("member-name").textContent = data.name || authName;
-      $("member-avatar").textContent = (data.name || authName).trim().slice(0, 2) || "?";
+      setProfileMissing(false);
+      hideProfileSetup();
+      const displayName = data.name || authName;
+      $("member-name").textContent = displayName;
+      $("member-avatar").textContent = displayName.trim().slice(0, 2) || "?";
       $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
     }
 
