@@ -221,6 +221,11 @@
     .online-member-info span { display:block; margin-top:3px; color:var(--muted-2); font-size:10px; }
     .online-dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#55b875; box-shadow:0 0 8px rgba(85,184,117,.5); }
     .online-empty { color:var(--muted); font-size:13px; padding:5px 0; }
+    .personnel-notice { margin-bottom:15px; padding:13px 15px; border:1px solid #493c2b; border-radius:10px; background:rgba(150,116,54,.08); color:#cfc6b7; font-size:12px; line-height:1.5; }
+    .personnel-card { border-color:#3b3430; }
+    .personnel-card .card-header { margin-bottom:13px; }
+    .personnel-meta { color:var(--muted-2); font-size:10px; margin-top:4px; }
+    .personnel-note-preview { color:#aaa6a0; font-size:11px; line-height:1.45; white-space:pre-line; max-width:520px; }
     .page-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:15px; }
     .placeholder-card { min-height:180px; }
     .placeholder-card h3 { margin-top:0; font-family:Georgia,"Times New Roman",serif; }
@@ -544,6 +549,7 @@
 <nav aria-label="Hauptnavigation" class="nav-menu" id="main-navigation">
 <button class="nav-button active" data-page="overview" type="button"><span class="nav-icon">🏠</span>Übersicht</button>
 <button class="nav-button" data-page="members" type="button"><span class="nav-icon">👥</span>Mitglieder</button>
+<button class="nav-button hidden" data-page="personnel" id="nav-personnel" type="button"><span class="nav-icon">🗂️</span>Personalakten</button>
 <button class="nav-button" data-page="finances" type="button"><span class="nav-icon">💰</span>Finanzen</button>
 <button class="nav-button" data-page="resources" type="button"><span class="nav-icon">📦</span>Ressourcen</button>
 <button class="nav-button" data-page="orders" type="button"><span class="nav-icon">📋</span>Aufträge</button>
@@ -623,6 +629,12 @@
 <div class="card online-panel" style="margin-top:15px;"><div class="online-panel-header"><h3>Brigade online</h3><span class="online-count" id="online-count-members">0 online</span></div><div class="online-list" id="online-list-members"><div class="online-empty">Online-Status wird geladen…</div></div></div>
 <div class="card"><div class="table-wrap" id="members-page-list"></div></div>
 </section>
+<section class="page hidden" data-page-content="personnel">
+<div class="page-header"><h2>Personalakten</h2><p>Interne Akten der Führungsebene – nur für Zar, Zakon, Vor und Krestny.</p></div>
+<div class="personnel-notice"><strong>Vertraulicher Führungsbereich.</strong> Diese Inhalte sind ausschließlich für Mitglieder der Ränge 9–12 bestimmt. Akten können über die Mitgliederliste angelegt, bearbeitet und gelöscht werden.</div>
+<div class="toolbar"><input class="search" id="personnel-search" placeholder="Mitglieder in den Personalakten durchsuchen…" type="search"/><button class="small-button" id="personnel-refresh" type="button">↻ Aktualisieren</button></div>
+<div class="card personnel-card"><div class="table-wrap" id="personnel-list"></div></div>
+</section>
 <section class="page" data-page-content="finances">
 <div class="page-header"><h2>Finanzen</h2><p>Brigadekasse, Einnahmen, Ausgaben und Finanzjournal.</p></div>
 <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Kontostand</div><div class="kpi-number" id="finance-page-balance">$0.00</div><div class="kpi-sub">USD</div></div><div class="card kpi-card"><div class="kpi-label">Einnahmen</div><div class="kpi-number" id="finance-income">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div><div class="card kpi-card"><div class="kpi-label">Ausgaben</div><div class="kpi-number" id="finance-expense">$0.00</div><div class="kpi-sub">Erfasster Zeitraum</div></div></div>
@@ -692,16 +704,17 @@
   const SUPABASE_KEY = "sb_publishable_TjviimwkfAiJALkKUqJKZA_Zpyl7rQC";
   const $ = id => document.getElementById(id);
   const qsa = sel => Array.from(document.querySelectorAll(sel));
-  const pages = ["overview","members","finances","resources","orders","production","weapons","stats","chronicle","admin"];
+  const pages = ["overview","members","personnel","finances","resources","orders","production","weapons","stats","chronicle","admin"];
   const orderStatuses = ["Neu","Angenommen","Ressourcen werden gesammelt","Produktion","Fertig","Ausgeliefert","Abgebrochen"];
   const themes = ["bordeaux","steel","night","forest","gold"];
 
   let supabaseClient = null;
   let currentUser = null;
   let currentMember = null;
-  let onlineChannel = null;
   let onlineMembers = new Map();
-  let cache = {members:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[], financeBalance:0, currency:"USD"};
+  let onlinePresenceTimer = null;
+  let onlinePresenceRunning = false;
+  let cache = {members:[], personnel:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[], financeBalance:0, currency:"USD"};
   let recoveryMode = false;
   let refreshTimer = null;
 
@@ -774,6 +787,17 @@
     const role=String(currentMember?.role||"").trim().toLowerCase();
     return rank>=8 || role==="admin" || role==="administrator";
   }
+  function canViewPersonnel() {
+    const rank = rankLevel(currentMember?.rank);
+    return rank >= 9 && rank <= 12;
+  }
+  function updateLeadershipUI() {
+    const allowed = canViewPersonnel();
+    $("nav-personnel")?.classList.toggle("hidden", !allowed);
+    const page = document.querySelector('[data-page-content="personnel"]');
+    if (page) page.classList.toggle("hidden", !allowed);
+    if (!allowed && location.hash === "#personnel") showPage("members");
+  }
   function canCreateOrders() { return rankLevel(currentMember?.rank)>=11; }
   function canDeleteMember(targetId) {
     const actorRank = rankLevel(currentMember?.rank);
@@ -844,6 +868,7 @@
     ["member-rank","settings-profile-rank"].forEach(id => { if ($(id)) $(id).textContent = rank; });
     ["member-avatar","settings-avatar"].forEach(id => { if ($(id)) $(id).textContent = initials(name); });
     if ($("admin-role")) $("admin-role").textContent = currentMember?.rank || "Mitglied";
+    updateLeadershipUI();
   }
 
   function updateProfileViews() {
@@ -890,6 +915,7 @@
 
   function showPage(name) {
     if (!pages.includes(name)) name = "overview";
+    if (name === "personnel" && !canViewPersonnel()) name = "members";
     qsa("[data-page-content]").forEach(el => el.classList.toggle("active", el.dataset.pageContent === name));
     qsa("[data-page]").forEach(el => el.classList.toggle("active", el.dataset.page === name));
     history.replaceState(null,"",`#${name}`);
@@ -911,35 +937,41 @@
       supabaseClient.from("production_recipes").select("id,weapon,ressource,menge").order("id"),
       supabaseClient.from("production_locations").select("id,name,description,active,created_at").order("id"),
       supabaseClient.from("production_jobs").select("id,auftrag,standort,menge,status,gestartet_am,fertig_am,created_at,mitglied").order("created_at",{ascending:false}).limit(200),
-      supabaseClient.from("brigade_finances").select("balance,currency").eq("id",1).maybeSingle()
+      supabaseClient.from("brigade_finances").select("balance,currency").eq("id",1).maybeSingle(),
+      canViewPersonnel() ? supabaseClient.from("personnel_files").select("id,member_id,notizen,beurteilung,hinweise,created_at,updated_at,created_by").order("updated_at",{ascending:false}) : Promise.resolve({data:[],error:null})
     ]);
-    const [members,finances,resources,orders,weapons,recipes,locations,jobs,fin] = results;
-    for (const [label,res] of Object.entries({members,finances,resources,orders,weapons,recipes,locations,jobs,fin})) if(res.error) console.warn(label,res.error);
+    const [members,finances,resources,orders,weapons,recipes,locations,jobs,fin,personnel] = results;
+    for (const [label,res] of Object.entries({members,finances,resources,orders,weapons,recipes,locations,jobs,fin,personnel})) if(res.error) console.warn(label,res.error);
     cache.members = members.data || []; cache.finances = finances.data || []; cache.resources = resources.data || []; cache.orders = orders.data || [];
     cache.weapons = weapons.data || []; cache.recipes = recipes.data || []; cache.locations = locations.data || []; cache.jobs = jobs.data || [];
+    cache.personnel = canViewPersonnel() ? (personnel.data || []) : [];
     cache.financeBalance = Number(fin.data?.balance || 0); cache.currency = fin.data?.currency || "USD";
     renderAll();
   }
 
-  function renderAll() { renderDashboard(); renderMembers(); renderFinances(); renderResources(); renderOrders(); renderProduction(); renderWeapons(); renderStats(); renderChronicle(); renderNotifications(); renderAdmin(); renderOnlineMembers(); }
+  function renderAll() { renderDashboard(); renderMembers(); renderPersonnel(); renderFinances(); renderResources(); renderOrders(); renderProduction(); renderWeapons(); renderStats(); renderChronicle(); renderNotifications(); renderAdmin(); renderOnlineMembers(); }
 
   function onlineInitials(name) {
     return initials(name || "?").slice(0,2);
   }
 
-  function rebuildOnlineMembers() {
-    if (!onlineChannel) { onlineMembers = new Map(); return; }
-    const state = onlineChannel.presenceState() || {};
+  function rebuildOnlineMembers(rows) {
     const map = new Map();
-    Object.keys(state).forEach(key => {
-      const presences = Array.isArray(state[key]) ? state[key] : [];
-      presences.forEach(p => {
-        if (!p) return;
-        const userId = p.user_id || p.userId || key;
-        const memberId = Number(p.member_id || p.memberId || 0);
-        if (userId && memberId) map.set(String(userId), { ...p, user_id: String(userId), member_id: memberId });
-      });
+    const now = Date.now();
+    const ONLINE_WINDOW_MS = 45000;
+
+    (rows || []).forEach(row => {
+      const lastSeen = new Date(row.last_seen || 0).getTime();
+      if (!row || !row.member_id || !lastSeen) return;
+      if (now - lastSeen <= ONLINE_WINDOW_MS) {
+        map.set(String(row.member_id), {
+          member_id: Number(row.member_id),
+          user_id: row.user_id ? String(row.user_id) : null,
+          last_seen: row.last_seen
+        });
+      }
     });
+
     onlineMembers = map;
   }
 
@@ -952,9 +984,11 @@
     const members = cache.members
       .filter(m => m.active !== false && ids.has(Number(m.id)))
       .sort((a,b) => rankLevel(b.rank) - rankLevel(a.rank));
+
     const html = members.length
       ? members.map(m => `<div class="online-member"><div class="online-avatar">${esc(onlineInitials(m.name))}</div><div class="online-member-info"><strong>${esc(m.name || "Unbekannt")}</strong><span>${esc(rankDisplay(m.rank))} · ${esc(m.role || "Mitglied")}</span></div><span class="online-dot" title="Online"></span></div>`).join("")
-      : `<div class="online-empty">Aktuell ist niemand außer dir online.</div>`;
+      : `<div class="online-empty">Aktuell ist außer dir niemand online.</div>`;
+
     if ($("online-list")) $("online-list").innerHTML = html;
     if ($("online-list-members")) $("online-list-members").innerHTML = html;
     const count = members.length;
@@ -962,84 +996,70 @@
     if ($("online-count-members")) $("online-count-members").textContent = `${count} online`;
   }
 
-  async function setupOnlinePresence() {
+  async function refreshOnlinePresence() {
     if (!supabaseClient || !currentUser || !currentMember) return;
-    if (onlineChannel) {
-      try { await supabaseClient.removeChannel(onlineChannel); } catch {}
-      onlineChannel = null;
-    }
-    onlineMembers = new Map();
 
-    // Alle angemeldeten Brigade-Mitglieder verwenden exakt denselben Presence-Kanal.
-    // Die Presence-Daten enthalten nur die für die Anzeige nötigen Werte.
-    onlineChannel = supabaseClient.channel("brigade-online", {
-      config: { presence: { key: String(currentUser.id) } }
-    });
+    try {
+      // Eigenen Heartbeat aktualisieren. Die RLS-Policy erlaubt das nur
+      // für die dem eingeloggten Benutzer zugeordnete Mitgliederzeile.
+      const { error: upsertError } = await supabaseClient
+        .from("member_presence")
+        .upsert({
+          member_id: Number(currentMember.id),
+          user_id: String(currentUser.id),
+          last_seen: new Date().toISOString()
+        }, { onConflict: "member_id" });
 
-    const refreshPresence = () => {
-      rebuildOnlineMembers();
+      if (upsertError) {
+        console.warn("Online-Heartbeat fehlgeschlagen:", upsertError);
+      }
+
+      const { data, error } = await supabaseClient
+        .from("member_presence")
+        .select("member_id,user_id,last_seen")
+        .order("last_seen", { ascending: false });
+
+      if (error) {
+        console.warn("Online-Liste konnte nicht geladen werden:", error);
+        return;
+      }
+
+      rebuildOnlineMembers(data || []);
       renderOnlineMembers();
       renderMembers();
-    };
+    } catch (err) {
+      console.warn("Online-Status konnte nicht aktualisiert werden:", err);
+    }
+  }
 
-    onlineChannel
-      .on("presence", { event: "sync" }, refreshPresence)
-      .on("presence", { event: "join" }, refreshPresence)
-      .on("presence", { event: "leave" }, refreshPresence);
+  async function setupOnlinePresence() {
+    if (!supabaseClient || !currentUser || !currentMember) return;
 
-    const status = await onlineChannel.subscribe(async status => {
-      if (status === "SUBSCRIBED") {
-        try {
-          await onlineChannel.track({
-            user_id: String(currentUser.id),
-            member_id: Number(currentMember.id),
-            name: currentMember.name || "Unbekannt",
-            active: true,
-            last_seen: new Date().toISOString()
-          });
-          refreshPresence();
-        } catch (err) {
-          console.warn("Online-Status konnte nicht veröffentlicht werden:", err);
-        }
-      }
-    });
-
-    if (status && status !== "SUBSCRIBED") {
-      console.warn("Online-Präsenz konnte nicht verbunden werden:", status);
-      renderOnlineMembers();
+    if (onlinePresenceTimer) {
+      clearInterval(onlinePresenceTimer);
+      onlinePresenceTimer = null;
     }
 
-    // Keep the presence fresh while the page is open and active.
-    // This also helps avoid stale online entries after a browser/tab suspension.
-    if (window.__presenceHeartbeat) clearInterval(window.__presenceHeartbeat);
-    window.__presenceHeartbeat = setInterval(async () => {
-      if (!onlineChannel || !currentUser || document.hidden) return;
-      try {
-        await onlineChannel.track({
-          user_id: String(currentUser.id),
-          member_id: Number(currentMember.id),
-          name: currentMember.name || "Unbekannt",
-          active: true,
-          last_seen: new Date().toISOString()
-        });
-      } catch {}
-    }, 20000);
+    onlinePresenceRunning = true;
+    onlineMembers = new Map();
+    renderOnlineMembers();
 
-    document.addEventListener("visibilitychange", async () => {
-      if (!onlineChannel || !currentUser || !currentMember) return;
-      if (!document.hidden) {
-        try {
-          await onlineChannel.track({
-            user_id: String(currentUser.id),
-            member_id: Number(currentMember.id),
-            name: currentMember.name || "Unbekannt",
-            active: true,
-            last_seen: new Date().toISOString()
-          });
-          refreshPresence();
-        } catch {}
-      }
-    });
+    // Sofort registrieren und anschließend regelmäßig aktualisieren.
+    await refreshOnlinePresence();
+
+    onlinePresenceTimer = setInterval(async () => {
+      if (!onlinePresenceRunning || document.hidden) return;
+      await refreshOnlinePresence();
+    }, 15000);
+
+    if (!window.__presenceVisibilityHandler) {
+      window.__presenceVisibilityHandler = async () => {
+        if (!document.hidden && onlinePresenceRunning) {
+          await refreshOnlinePresence();
+        }
+      };
+      document.addEventListener("visibilitychange", window.__presenceVisibilityHandler);
+    }
   }
 
   function renderDashboard() {
@@ -1070,9 +1090,66 @@
     const q = ($( "member-search")?.value || "").toLowerCase();
     const rows = cache.members.filter(m=>`${m.name||""} ${m.rank||""} ${m.role||""}`.toLowerCase().includes(q));
     if($("member-count")) $("member-count").textContent = cache.members.filter(m=>m.active).length;
-    const html = rows.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.motto||"")}</div></td><td>${esc(m.rank||"Novik")}</td><td>${esc(m.role||"Mitglied")}</td><td>${m.active? (getOnlineMemberIds().has(Number(m.id)) ? '<span class="badge success">Online</span>' : '<span class="badge info">Offline</span>') : '<span class="badge danger">Inaktiv</span>'}</td><td><div class="form-actions"><button class="small-button" data-member-detail="${Number(m.id)}">Akte</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Löschen</button>`:""}</div></td></tr>`).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
+    const html = rows.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.motto||"")}</div></td><td>${esc(m.rank||"Novik")}</td><td>${esc(m.role||"Mitglied")}</td><td>${m.active? (getOnlineMemberIds().has(Number(m.id)) ? '<span class="badge success">Online</span>' : '<span class="badge info">Offline</span>') : '<span class="badge danger">Inaktiv</span>'}</td><td><div class="form-actions"><button class="small-button" data-member-detail="${Number(m.id)}">Akte</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Löschen</button>`:""}${canViewPersonnel()?`<button class="small-button" data-personnel-open="${Number(m.id)}">Personalakte</button>`:""}</div></td></tr>`).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
     if($("members-page-list")) $("members-page-list").innerHTML=html;
     if($("admin-members-list")) $("admin-members-list").innerHTML=html;
+  }
+
+  function personnelForMember(memberId) {
+    return cache.personnel.find(x => Number(x.member_id) === Number(memberId)) || null;
+  }
+
+  function renderPersonnel() {
+    if (!canViewPersonnel()) {
+      if ($("personnel-list")) $("personnel-list").innerHTML = "";
+      return;
+    }
+    const q = ($("personnel-search")?.value || "").toLowerCase();
+    const members = cache.members.filter(m => `${m.name||""} ${m.rank||""} ${m.role||""}`.toLowerCase().includes(q));
+    const html = members.length ? `<table class="data-table"><thead><tr><th>Mitglied</th><th>Rang</th><th>Akte</th><th>Zuletzt geändert</th><th></th></tr></thead><tbody>${members.map(m => {
+      const file = personnelForMember(m.id);
+      const preview = file?.notizen || file?.beurteilung || file?.hinweise || "Noch keine Einträge vorhanden.";
+      return `<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.role||"Mitglied")}</div></td><td>${esc(rankDisplay(m.rank))}</td><td>${file ? '<span class="badge success">Vorhanden</span>' : '<span class="badge info">Nicht angelegt</span>'}<div class="personnel-note-preview">${esc(preview.length>110 ? preview.slice(0,110)+"…" : preview)}</div></td><td>${file ? date(file.updated_at || file.created_at) : "–"}</td><td><div class="form-actions"><button class="small-button" data-personnel-open="${Number(m.id)}">${file ? "Akte öffnen" : "Akte anlegen"}</button>${file ? `<button class="danger-button" data-personnel-delete="${Number(file.id)}">Löschen</button>` : ""}</div></td></tr>`;
+    }).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
+    if ($("personnel-list")) $("personnel-list").innerHTML = html;
+  }
+
+  function openPersonnelFile(memberId) {
+    if (!canViewPersonnel()) return toast("Nur die Führungsebene darf Personalakten einsehen.","error");
+    const m = cache.members.find(x => Number(x.id) === Number(memberId));
+    if (!m) return;
+    const file = personnelForMember(memberId);
+    openAction(file ? "Personalakte bearbeiten" : "Personalakte anlegen", `${m.name || "Mitglied"} · ${rankDisplay(m.rank)}`, `<div class="form-grid"><div class="full"><label>Interne Notizen</label><textarea id="f-p-notes" maxlength="5000" rows="7" placeholder="Beobachtungen, Gesprächsnotizen, Entwicklung, interne Informationen …">${esc(file?.notizen||"")}</textarea></div><div class="full"><label>Leistung / Verhalten</label><textarea id="f-p-eval" maxlength="3000" rows="5" placeholder="Interne Einschätzung zur Person …">${esc(file?.beurteilung||"")}</textarea></div><div class="full"><label>Besondere Hinweise</label><textarea id="f-p-hints" maxlength="3000" rows="5" placeholder="Weitere interne Hinweise …">${esc(file?.hinweise||"")}</textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">${file ? "Akte speichern" : "Akte anlegen"}</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`, async e => {
+      e.preventDefault();
+      if (!canViewPersonnel()) return setMessage($("action-message"),"Keine Berechtigung für Personalakten.","error");
+      const payload = { member_id:Number(memberId), notizen:$('f-p-notes').value.trim(), beurteilung:$('f-p-eval').value.trim(), hinweise:$('f-p-hints').value.trim(), updated_at:new Date().toISOString() };
+      let result;
+      if (file) result = await supabaseClient.from("personnel_files").update(payload).eq("id",file.id).select("id,member_id,notizen,beurteilung,hinweise,created_at,updated_at,created_by").single();
+      else result = await supabaseClient.from("personnel_files").insert({...payload, created_by:currentMember?.id||null}).select("id,member_id,notizen,beurteilung,hinweise,created_at,updated_at,created_by").single();
+      if (result.error) return setMessage($("action-message"),`Personalakte konnte nicht gespeichert werden: ${errorText(result.error)}`,"error");
+      closeAction();
+      await fetchAll();
+      toast(file ? "Personalakte aktualisiert." : "Personalakte angelegt.");
+    });
+  }
+
+  function personnelDetail(memberId) {
+    if (!canViewPersonnel()) return toast("Nur die Führungsebene darf Personalakten einsehen.","error");
+    const m = cache.members.find(x => Number(x.id) === Number(memberId));
+    const file = personnelForMember(memberId);
+    if (!m || !file) return openPersonnelFile(memberId);
+    openDetail(`Personalakte · ${m.name||"Mitglied"}`, `${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`, `<div class="detail-grid"><div class="detail-box"><small>Angelegt</small><strong>${date(file.created_at)}</strong></div><div class="detail-box"><small>Zuletzt geändert</small><strong>${date(file.updated_at||file.created_at)}</strong></div></div><div class="detail-section"><h4>Interne Notizen</h4><div class="personnel-note-preview" style="max-width:none">${esc(file.notizen||"Keine Einträge")}</div></div><div class="detail-section"><h4>Leistung / Verhalten</h4><div class="personnel-note-preview" style="max-width:none">${esc(file.beurteilung||"Keine Einträge")}</div></div><div class="detail-section"><h4>Besondere Hinweise</h4><div class="personnel-note-preview" style="max-width:none">${esc(file.hinweise||"Keine Einträge")}</div></div><div class="form-actions" style="margin-top:16px"><button class="small-button" data-personnel-edit="${Number(memberId)}">Bearbeiten</button><button class="danger-button" data-personnel-delete="${Number(file.id)}">Akte löschen</button></div>`);
+  }
+
+  async function deletePersonnelFile(id) {
+    if (!canViewPersonnel()) return toast("Nur die Führungsebene darf Personalakten löschen.","error");
+    const file = cache.personnel.find(x => Number(x.id) === Number(id));
+    if (!file) return;
+    const m = cache.members.find(x => Number(x.id) === Number(file.member_id));
+    if (!confirm(`Personalakte von „${m?.name||"Unbekannt"}“ wirklich löschen?\n\nAlle internen Einträge dieser Akte werden dauerhaft entfernt.`)) return;
+    const {error} = await supabaseClient.from("personnel_files").delete().eq("id",id);
+    if (error) return toast(`Personalakte konnte nicht gelöscht werden: ${errorText(error)}`,"error");
+    closeDetail(); closeAction(); await fetchAll(); toast("Personalakte gelöscht.");
   }
 
   function renderFinances() {
@@ -1138,7 +1215,7 @@
     if($("rank-reference")) $("rank-reference").innerHTML=BRIGADE_RANKS.map(r=>`<div class="inline-stat"><span>${r.icon?r.icon+" ":""}<strong>${esc(r.name)}</strong> · Rang ${r.level}</span><strong>${esc(r.function)}</strong></div>`).join("");
   }
 
-  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; const actions=canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Mitglied löschen</button>`:""}</div>`:""; openDetail(m.name||"Mitglied",`${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${actions}`); }
+  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; const actions=canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Mitglied löschen</button>`:""}${canViewPersonnel()?`<button class="small-button" data-personnel-open="${Number(m.id)}">Personalakte</button>`:""}</div>`:(canViewPersonnel()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-personnel-open="${Number(m.id)}">Personalakte</button></div>`:""); openDetail(m.name||"Mitglied",`${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${actions}`); }
   function editMember(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error"); openAction("Mitglied bearbeiten","Rang, Rolle und Status",`<div class="form-grid"><div><label>Rang</label><select id="f-rank" class="select-input" required>${rankOptions(m.rank||"Novik")}</select></div><div><label>Rolle / Zusatzfunktion</label><input id="f-role" value="${esc(m.role||"")}" placeholder="z. B. Stellvertreter"></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),`Speichern fehlgeschlagen: ${errorText(error)}`,"error");closeAction();closeDetail();await fetchAll();toast("Mitglied aktualisiert.");}); }
 
   function createFinance() {
@@ -1357,8 +1434,8 @@
     $("open-search-button")?.addEventListener("click",()=>{$("global-search")?.classList.remove("hidden");$("global-search-input").value="";globalSearch();setTimeout(()=>$("global-search-input")?.focus(),30);});
     $("global-search")?.addEventListener("click",e=>{if(e.target===$("global-search"))$("global-search").classList.add("hidden")}); $("global-search-input")?.addEventListener("input",globalSearch);
     qsa("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
-    const searchMap={"member-search":renderMembers,"finance-search":renderFinances,"resource-search":renderResources,"order-search":renderOrders,"production-search":renderProduction,"weapon-search":renderWeapons}; Object.entries(searchMap).forEach(([id,fn])=>$(id)?.addEventListener("input",fn));
-    ["member-refresh","finance-refresh","resource-refresh","order-refresh","production-refresh","weapon-refresh","admin-member-refresh","admin-system-refresh","overview-activity-refresh","chronicle-refresh"].forEach(id=>$(id)?.addEventListener("click",fetchAll));
+    const searchMap={"member-search":renderMembers,"personnel-search":renderPersonnel,"finance-search":renderFinances,"resource-search":renderResources,"order-search":renderOrders,"production-search":renderProduction,"weapon-search":renderWeapons}; Object.entries(searchMap).forEach(([id,fn])=>$(id)?.addEventListener("input",fn));
+    ["member-refresh","personnel-refresh","finance-refresh","resource-refresh","order-refresh","production-refresh","weapon-refresh","admin-member-refresh","admin-system-refresh","overview-activity-refresh","chronicle-refresh"].forEach(id=>$(id)?.addEventListener("click",fetchAll));
     $("finance-add")?.addEventListener("click",createFinance); $("resource-new")?.addEventListener("click",createResource); $("resource-add")?.addEventListener("click",()=>{
       const activeResources=cache.resources.filter(r=>r.active!==false);
       if(!activeResources.length){
@@ -1368,7 +1445,7 @@
       openAction("Bestand ändern","Wähle die Ressource aus, deren Bestand geändert werden soll.",`<div><label>Ressource</label><select id="f-resource-pick" class="select-input" required>${activeResources.map(r=>`<option value="${Number(r.id)}">${esc(r.name)} · ${Number(r.quantity||0)} ${esc(r.unit||"")}</option>`).join("")}</select></div><div class="form-actions"><button class="primary-button" type="submit">Weiter</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,e=>{e.preventDefault();const id=$("f-resource-pick")?.value;if(!id)return;closeAction();changeResource(id);});
     }); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("admin-new-member")?.addEventListener("click",createMember); $("action-modal")?.addEventListener("change",e=>{if(e.target?.id==="f-m-rank")updateRankInfo();}); $("admin-new-resource")?.addEventListener("click",createResource); $("admin-new-weapon")?.addEventListener("click",createWeapon); $("admin-new-location")?.addEventListener("click",createLocation); $("chronicle-print")?.addEventListener("click",()=>window.print());
     $("action-modal-close")?.addEventListener("click",closeAction); $("detail-close")?.addEventListener("click",closeDetail); $("action-modal")?.addEventListener("click",e=>{if(e.target===$("action-modal"))closeAction()}); $("detail-modal")?.addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
-    document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const mdx=e.target.closest?.("[data-member-delete]");if(mdx)deleteMember(mdx.dataset.memberDelete);const rdx=e.target.closest?.("[data-resource-delete]");if(rdx)deleteResource(rdx.dataset.resourceDelete);const wdx=e.target.closest?.("[data-weapon-delete]");if(wdx)deleteWeapon(wdx.dataset.weaponDelete);const odx=e.target.closest?.("[data-order-delete]");if(odx)deleteOrder(odx.dataset.orderDelete);const jdx=e.target.closest?.("[data-job-delete]");if(jdx)deleteProductionJob(jdx.dataset.jobDelete);const fdx=e.target.closest?.("[data-finance-delete]");if(fdx)deleteFinance(fdx.dataset.financeDelete);const ldx=e.target.closest?.("[data-location-delete]");if(ldx)deleteLocation(ldx.dataset.locationDelete);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
+    document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const po=e.target.closest?.("[data-personnel-open]");if(po)personnelDetail(po.dataset.personnelOpen);const pe=e.target.closest?.("[data-personnel-edit]");if(pe){closeDetail();openPersonnelFile(pe.dataset.personnelEdit);}const pd=e.target.closest?.("[data-personnel-delete]");if(pd)deletePersonnelFile(pd.dataset.personnelDelete);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const mdx=e.target.closest?.("[data-member-delete]");if(mdx)deleteMember(mdx.dataset.memberDelete);const rdx=e.target.closest?.("[data-resource-delete]");if(rdx)deleteResource(rdx.dataset.resourceDelete);const wdx=e.target.closest?.("[data-weapon-delete]");if(wdx)deleteWeapon(wdx.dataset.weaponDelete);const odx=e.target.closest?.("[data-order-delete]");if(odx)deleteOrder(odx.dataset.orderDelete);const jdx=e.target.closest?.("[data-job-delete]");if(jdx)deleteProductionJob(jdx.dataset.jobDelete);const fdx=e.target.closest?.("[data-finance-delete]");if(fdx)deleteFinance(fdx.dataset.financeDelete);const ldx=e.target.closest?.("[data-location-delete]");if(ldx)deleteLocation(ldx.dataset.locationDelete);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
     document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("open-search-button")?.click();}if(e.key==="Escape"){closeSettings();$("global-search")?.classList.add("hidden");}});
   }
 
@@ -1379,7 +1456,7 @@
       loadTheme(); registerEvents(); startClock();
       if(!window.supabase?.createClient) throw new Error("Supabase JavaScript konnte nicht geladen werden. Bitte Internetverbindung und CDN prüfen.");
       supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(window.__presenceHeartbeat) { clearInterval(window.__presenceHeartbeat); window.__presenceHeartbeat=null; } if(onlineChannel){try{await supabaseClient.removeChannel(onlineChannel);}catch{} onlineChannel=null;}onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
+      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(onlinePresenceTimer) { clearInterval(onlinePresenceTimer); onlinePresenceTimer=null; } onlinePresenceRunning=false; onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
       if(recoveryUrl()){recoveryMode=true;showRecovery();return;}
       await checkSession();
     } catch(e) { console.error("Startfehler",e); showOnly("loading"); if($("loading")) $("loading").innerHTML=`<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${esc(errorText(e))}</div>`; }
