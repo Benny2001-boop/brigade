@@ -934,7 +934,7 @@
     let income=0, expense=0; cache.finances.forEach(t=>{const n=Number(t.amount||0); if(n>=0)income+=n;else expense+=Math.abs(n);});
     if($("finance-income")) $("finance-income").textContent=money(income,cache.currency); if($("finance-expense")) $("finance-expense").textContent=money(expense,cache.currency);
     if($("finance-page-balance")) $("finance-page-balance").textContent=money(cache.financeBalance,cache.currency);
-    if($("finance-list")) $("finance-list").innerHTML=tx.length?`<table class="data-table"><thead><tr><th>Datum</th><th>Buchung</th><th>Kategorie</th><th>Mitglied</th><th>Betrag</th></tr></thead><tbody>${tx.map(t=>`<tr><td>${date(t.created_at)}</td><td><strong>${esc(t.beschreibung||"Ohne Beschreibung")}</strong><div class="muted">${esc(t.transaction_type||"")}</div></td><td>${esc(t.category||"–")}</td><td>${esc(memberName(t.mitglied))}</td><td>${money(t.amount,cache.currency)}</td></tr>`).join("")}</tbody></table>`:empty("Keine Buchungen","Noch keine Finanztransaktionen vorhanden.");
+    if($("finance-list")) $("finance-list").innerHTML=tx.length?`<table class="data-table"><thead><tr><th>Datum</th><th>Buchung</th><th>Kategorie</th><th>Mitglied</th><th>Betrag</th><th></th></tr></thead><tbody>${tx.map(t=>`<tr><td>${date(t.created_at)}</td><td><strong>${esc(t.beschreibung||"Ohne Beschreibung")}</strong><div class="muted">${esc(t.transaction_type||"")}</div></td><td>${esc(t.category||"–")}</td><td>${esc(memberName(t.mitglied))}</td><td>${money(t.amount,cache.currency)}</td><td><button class="danger-button" data-finance-delete="${Number(t.id)}">Löschen</button></td></tr>`).join("")}</tbody></table>`:empty("Keine Buchungen","Noch keine Finanztransaktionen vorhanden.");
   }
 
   function renderResources() {
@@ -1064,6 +1064,31 @@
       x=await supabaseClient.from("orders").delete().eq("id",id); if(x.error)throw x.error;
       closeAction(); closeDetail(); await fetchAll(); toast("Auftrag gelöscht.");
     } catch(err) { toast(`Auftrag konnte nicht gelöscht werden: ${errorText(err)}`,"error"); }
+  }
+
+  async function deleteFinance(id) {
+    if(!canManage()) return toast("Keine Verwaltungsberechtigung.","error");
+    const t=cache.finances.find(x=>Number(x.id)===Number(id));
+    if(!t)return;
+    const amount=Number(t.amount||0);
+    const label=t.beschreibung||t.category||"Finanzbuchung";
+    if(!confirm(`Finanzbuchung „${label}“ über ${money(amount,cache.currency)} wirklich löschen?\n\nDer Betrag wird dabei auch aus dem aktuellen Kassenstand herausgerechnet.`))return;
+    try {
+      const {data:fin,error:finError}=await supabaseClient.from("brigade_finances").select("balance").eq("id",1).maybeSingle();
+      if(finError)throw finError;
+      if(!fin)throw new Error("Brigadekasse wurde nicht gefunden.");
+      const newBalance=Number(fin.balance||0)-amount;
+      const update=await supabaseClient.from("brigade_finances").update({balance:newBalance,updated_at:new Date().toISOString()}).eq("id",1);
+      if(update.error)throw update.error;
+      const del=await supabaseClient.from("financial_transactions").delete().eq("id",id);
+      if(del.error){
+        await supabaseClient.from("brigade_finances").update({balance:Number(fin.balance||0),updated_at:new Date().toISOString()}).eq("id",1);
+        throw del.error;
+      }
+      closeAction(); closeDetail(); await fetchAll(); toast("Finanzbuchung gelöscht und Kassenstand angepasst.");
+    } catch(err) {
+      toast(`Finanzbuchung konnte nicht gelöscht werden: ${errorText(err)}`,"error");
+    }
   }
 
   async function deleteProductionJob(id) {
@@ -1196,7 +1221,7 @@
       openAction("Bestand ändern","Wähle die Ressource aus, deren Bestand geändert werden soll.",`<div><label>Ressource</label><select id="f-resource-pick" class="select-input" required>${activeResources.map(r=>`<option value="${Number(r.id)}">${esc(r.name)} · ${Number(r.quantity||0)} ${esc(r.unit||"")}</option>`).join("")}</select></div><div class="form-actions"><button class="primary-button" type="submit">Weiter</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,e=>{e.preventDefault();const id=$("f-resource-pick")?.value;if(!id)return;closeAction();changeResource(id);});
     }); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("admin-new-member")?.addEventListener("click",createMember); $("action-modal")?.addEventListener("change",e=>{if(e.target?.id==="f-m-rank")updateRankInfo();}); $("admin-new-resource")?.addEventListener("click",createResource); $("admin-new-weapon")?.addEventListener("click",createWeapon); $("admin-new-location")?.addEventListener("click",createLocation); $("chronicle-print")?.addEventListener("click",()=>window.print());
     $("action-modal-close")?.addEventListener("click",closeAction); $("detail-close")?.addEventListener("click",closeDetail); $("action-modal")?.addEventListener("click",e=>{if(e.target===$("action-modal"))closeAction()}); $("detail-modal")?.addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
-    document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const mdx=e.target.closest?.("[data-member-delete]");if(mdx)deleteMember(mdx.dataset.memberDelete);const rdx=e.target.closest?.("[data-resource-delete]");if(rdx)deleteResource(rdx.dataset.resourceDelete);const wdx=e.target.closest?.("[data-weapon-delete]");if(wdx)deleteWeapon(wdx.dataset.weaponDelete);const odx=e.target.closest?.("[data-order-delete]");if(odx)deleteOrder(odx.dataset.orderDelete);const jdx=e.target.closest?.("[data-job-delete]");if(jdx)deleteProductionJob(jdx.dataset.jobDelete);const ldx=e.target.closest?.("[data-location-delete]");if(ldx)deleteLocation(ldx.dataset.locationDelete);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
+    document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const mdx=e.target.closest?.("[data-member-delete]");if(mdx)deleteMember(mdx.dataset.memberDelete);const rdx=e.target.closest?.("[data-resource-delete]");if(rdx)deleteResource(rdx.dataset.resourceDelete);const wdx=e.target.closest?.("[data-weapon-delete]");if(wdx)deleteWeapon(wdx.dataset.weaponDelete);const odx=e.target.closest?.("[data-order-delete]");if(odx)deleteOrder(odx.dataset.orderDelete);const jdx=e.target.closest?.("[data-job-delete]");if(jdx)deleteProductionJob(jdx.dataset.jobDelete);const fdx=e.target.closest?.("[data-finance-delete]");if(fdx)deleteFinance(fdx.dataset.financeDelete);const ldx=e.target.closest?.("[data-location-delete]");if(ldx)deleteLocation(ldx.dataset.locationDelete);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
     document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("open-search-button")?.click();}if(e.key==="Escape"){closeSettings();$("global-search")?.classList.add("hidden");}});
   }
 
