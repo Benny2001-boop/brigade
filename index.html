@@ -331,6 +331,38 @@
     const recoveryForm = document.getElementById("recovery-form");
     const recoveryMessage = document.getElementById("recovery-message");
 
+    // Beim Zurücksetzen des Passworts landet Supabase auf dieser Seite
+    // mit type=recovery im URL-Hash. In diesem Modus darf das Dashboard
+    // nicht gleichzeitig angezeigt werden.
+    let recoveryMode = false;
+    try {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        recoveryMode = hashParams.get("type") === "recovery";
+    } catch (e) {
+        recoveryMode = false;
+    }
+
+    function showLogin() {
+        loadingElement.style.display = "none";
+        recoveryElement.style.display = "none";
+        appElement.style.display = "none";
+        loginElement.style.display = "block";
+    }
+
+    function showRecovery() {
+        loadingElement.style.display = "none";
+        loginElement.style.display = "none";
+        appElement.style.display = "none";
+        recoveryElement.style.display = "block";
+    }
+
+    function showApp() {
+        loadingElement.style.display = "none";
+        loginElement.style.display = "none";
+        recoveryElement.style.display = "none";
+        appElement.style.display = "block";
+    }
+
 
     // =====================================================
     // PASSWORT VERGESSEN
@@ -400,9 +432,10 @@
 
         setTimeout(async function() {
             await supabaseClient.auth.signOut();
-            recoveryElement.style.display = "none";
-            loginElement.style.display = "block";
+            recoveryMode = false;
+            window.history.replaceState({}, document.title, window.location.pathname);
             recoveryForm.reset();
+            showLogin();
             loginMessage.innerHTML =
                 '<div class="success">Dein Passwort wurde geändert. Bitte melde dich an.</div>';
         }, 1200);
@@ -442,9 +475,8 @@
 
     logoutButton.addEventListener("click", async function() {
         await supabaseClient.auth.signOut();
-
-        appElement.style.display = "none";
-        loginElement.style.display = "block";
+        recoveryMode = false;
+        showLogin();
     });
 
 
@@ -457,16 +489,18 @@
             data: { session }
         } = await supabaseClient.auth.getSession();
 
-        loadingElement.style.display = "none";
-
-        if (!session) {
-            appElement.style.display = "none";
-            loginElement.style.display = "block";
+        // Während eines Passwort-Recovery-Links nicht ins Dashboard wechseln.
+        if (recoveryMode) {
+            showRecovery();
             return;
         }
 
-        loginElement.style.display = "none";
-        appElement.style.display = "block";
+        if (!session) {
+            showLogin();
+            return;
+        }
+
+        showApp();
 
         await loadMember();
         await loadFinances();
@@ -684,17 +718,15 @@
 
     supabaseClient.auth.onAuthStateChange(async function(event, session) {
         if (event === "PASSWORD_RECOVERY") {
-            loadingElement.style.display = "none";
-            loginElement.style.display = "none";
-            appElement.style.display = "none";
-            recoveryElement.style.display = "block";
+            recoveryMode = true;
+            showRecovery();
             return;
         }
 
         if (event === "SIGNED_OUT") {
-            recoveryElement.style.display = "none";
-            appElement.style.display = "none";
-            loginElement.style.display = "block";
+            recoveryMode = false;
+            showLogin();
+            return;
         }
 
         if (event === "SIGNED_IN" && session) {
