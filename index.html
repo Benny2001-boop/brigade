@@ -135,46 +135,85 @@
 
     #app { display: none; }
 
-    header {
+    #app { min-height: 100vh; }
+
+    .app-shell { min-height: 100vh; }
+
+    .app-header {
       background: var(--panel);
       border-bottom: 1px solid var(--border);
-      padding: 20px 30px;
+      padding: 18px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 20px;
     }
 
-    header h1 { margin: 0; font-size: 24px; }
-    header p { margin: 5px 0 0; color: var(--muted); }
+    .brand h1 { margin: 0; font-size: 23px; }
+    .brand p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
 
-    .user-info {
-      text-align: right;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
+    .user-info { text-align: right; color: var(--muted); font-size: 14px; }
     .user-info strong { color: var(--text); }
 
     .logout-button {
-      margin-top: 10px;
+      margin-top: 9px;
       padding: 8px 13px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: #374151;
       color: var(--text);
     }
-
     .logout-button:hover:not(:disabled) { background: #475569; }
 
-    main {
-      width: min(1200px, 100% - 40px);
-      margin: 30px auto;
+    .app-layout {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      min-height: calc(100vh - 82px);
     }
+
+    .sidebar {
+      background: #111827;
+      border-right: 1px solid var(--border);
+      padding: 18px 12px;
+    }
+
+    .nav-title {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 4px 11px 9px;
+    }
+
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      margin: 3px 0;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: #cbd5e1;
+      text-align: left;
+    }
+    .nav-button:hover { background: #1e293b; color: var(--text); }
+    .nav-button.active { background: #1e293b; border-color: var(--border); color: var(--text); }
+    .nav-icon { width: 22px; text-align: center; }
+
+    .content { min-width: 0; padding: 30px; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header { margin-bottom: 20px; }
+    .page-header h2 { margin: 0 0 6px; font-size: 25px; }
+    .page-header p { margin: 0; color: var(--muted); }
 
     .dashboard {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 16px;
     }
 
@@ -185,21 +224,16 @@
       padding: 22px;
     }
 
-    .stat-card h2 {
+    .stat-card h3 {
       margin: 0 0 9px;
       color: var(--muted);
       font-size: 14px;
       font-weight: normal;
     }
 
-    .value {
-      font-size: 28px;
-      font-weight: 700;
-    }
-
+    .value { font-size: 28px; font-weight: 700; }
     .section { margin-top: 28px; }
-    .section h2 { margin: 0 0 13px; font-size: 19px; }
-
+    .section h3 { margin: 0 0 13px; font-size: 19px; }
     .resource-list, .orders-list { margin-top: 0; }
 
     .resource-item {
@@ -210,31 +244,34 @@
       padding: 12px 0;
       border-bottom: 1px solid var(--border);
     }
-
     .resource-item:first-child { padding-top: 0; }
     .resource-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .status { color: #cbd5e1; font-weight: 600; text-align: right; }
 
-    .status {
-      color: #cbd5e1;
-      font-weight: 600;
-      text-align: right;
+    .page-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
     }
 
-    .empty {
-      color: var(--muted);
-      margin: 0;
+    .placeholder-card { min-height: 180px; }
+    .placeholder-card h3 { margin-top: 0; }
+    .placeholder-card p { color: var(--muted); line-height: 1.55; }
+
+    @media (max-width: 800px) {
+      .app-header { padding: 16px 18px; }
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--border); padding: 10px; overflow-x: auto; }
+      .nav-title { display: none; }
+      .nav-menu { display: flex; gap: 4px; min-width: max-content; }
+      .nav-button { width: auto; margin: 0; white-space: nowrap; }
+      .content { padding: 20px 14px; }
+      .user-info { text-align: right; }
     }
 
-    @media (max-width: 700px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
+    @media (max-width: 520px) {
+      .app-header { flex-direction: column; align-items: flex-start; }
       .user-info { text-align: left; }
-      main { width: min(100% - 24px, 1200px); margin-top: 20px; }
-      .auth-container { margin-top: 25px; }
-      .auth-card { padding: 24px; }
     }
   </style>
 </head>
@@ -314,63 +351,102 @@
 
   <!-- DASHBOARD -->
   <div id="app">
-    <header>
-      <div>
-        <h1>Brigade Verwaltung</h1>
-        <p>Zentrale Verwaltung von Finanzen, Ressourcen und Aufträgen</p>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <h1>Brigade Verwaltung</h1>
+          <p>Zentrale Verwaltung der Brigade</p>
+        </div>
+        <div class="user-info">
+          <div>Angemeldet als: <strong id="member-name">-</strong></div>
+          <div id="member-rank">-</div>
+          <button id="logout-button" class="logout-button" type="button">Abmelden</button>
+        </div>
+      </header>
+
+      <div class="app-layout">
+        <aside class="sidebar">
+          <div class="nav-title">Navigation</div>
+          <nav id="main-navigation" class="nav-menu" aria-label="Hauptnavigation">
+            <button class="nav-button active" data-page="overview" type="button"><span class="nav-icon">🏠</span>Übersicht</button>
+            <button class="nav-button" data-page="members" type="button"><span class="nav-icon">👥</span>Mitglieder</button>
+            <button class="nav-button" data-page="finances" type="button"><span class="nav-icon">💰</span>Finanzen</button>
+            <button class="nav-button" data-page="resources" type="button"><span class="nav-icon">📦</span>Ressourcen</button>
+            <button class="nav-button" data-page="orders" type="button"><span class="nav-icon">📋</span>Aufträge</button>
+            <button class="nav-button" data-page="production" type="button"><span class="nav-icon">🏭</span>Produktion</button>
+            <button class="nav-button" data-page="weapons" type="button"><span class="nav-icon">🔫</span>Waffen</button>
+            <button class="nav-button" data-page="admin" type="button"><span class="nav-icon">⚙️</span>Verwaltung</button>
+          </nav>
+        </aside>
+
+        <main class="content">
+          <section class="page active" data-page-content="overview">
+            <div class="page-header">
+              <h2>Übersicht</h2>
+              <p>Die wichtigsten Informationen auf einen Blick.</p>
+            </div>
+
+            <div class="dashboard">
+              <div class="card stat-card"><h3>Brigadekasse</h3><div id="balance" class="value">$0.00</div></div>
+              <div class="card stat-card"><h3>Ressourcen</h3><div id="resource-count" class="value">0</div></div>
+              <div class="card stat-card"><h3>Offene Aufträge</h3><div id="order-count" class="value">0</div></div>
+              <div class="card stat-card"><h3>Aktive Mitglieder</h3><div id="member-count" class="value">-</div></div>
+            </div>
+
+            <section class="section">
+              <h3>Ressourcenbestand</h3>
+              <div class="card"><div id="resources-list" class="resource-list">Lade Ressourcen...</div></div>
+            </section>
+
+            <section class="section">
+              <h3>Aktuelle Aufträge</h3>
+              <div class="card"><div id="orders-list" class="orders-list">Lade Aufträge...</div></div>
+            </section>
+          </section>
+
+          <section class="page" data-page-content="members">
+            <div class="page-header"><h2>Mitglieder</h2><p>Übersicht aller Brigade-Mitglieder.</p></div>
+            <div class="card placeholder-card"><h3>Mitgliederverwaltung</h3><p>Hier kommt als Nächstes die vollständige Mitgliederliste mit Rang, Rolle, Status und Login-Zuordnung hin.</p></div>
+          </section>
+
+          <section class="page" data-page-content="finances">
+            <div class="page-header"><h2>Finanzen</h2><p>Brigadekasse und Finanztransaktionen.</p></div>
+            <div class="page-grid">
+              <div class="card placeholder-card"><h3>Kontostand</h3><div id="finance-page-balance" class="value">$0.00</div></div>
+              <div class="card placeholder-card"><h3>Transaktionen</h3><p>Die vollständige Buchungshistorie wird hier angezeigt.</p></div>
+            </div>
+          </section>
+
+          <section class="page" data-page-content="resources">
+            <div class="page-header"><h2>Ressourcen</h2><p>Bestände und Ressourcenbewegungen.</p></div>
+            <div class="card"><div id="resources-page-list" class="resource-list">Lade Ressourcen...</div></div>
+          </section>
+
+          <section class="page" data-page-content="orders">
+            <div class="page-header"><h2>Aufträge</h2><p>Aufträge und deren aktueller Status.</p></div>
+            <div class="card"><div id="orders-page-list" class="orders-list">Lade Aufträge...</div></div>
+          </section>
+
+          <section class="page" data-page-content="production">
+            <div class="page-header"><h2>Produktion</h2><p>Produktionsaufträge und Produktionsstandorte.</p></div>
+            <div class="page-grid">
+              <div class="card placeholder-card"><h3>Produktionsjobs</h3><p>Hier erscheinen geplante, laufende und abgeschlossene Produktionsjobs.</p></div>
+              <div class="card placeholder-card"><h3>Standorte</h3><p>Die hinterlegten Produktionsstandorte werden hier verwaltet.</p></div>
+            </div>
+          </section>
+
+          <section class="page" data-page-content="weapons">
+            <div class="page-header"><h2>Waffen</h2><p>Verfügbare Waffen und Produktionsrezepte.</p></div>
+            <div class="card placeholder-card"><h3>Waffenübersicht</h3><p>Die Waffenliste und die zugehörigen Rezepte bauen wir als Nächstes an diese Seite an.</p></div>
+          </section>
+
+          <section class="page" data-page-content="admin">
+            <div class="page-header"><h2>Verwaltung</h2><p>Administrative Funktionen der Brigade.</p></div>
+            <div class="card placeholder-card"><h3>Administrationsbereich</h3><p>Dieser Bereich wird später abhängig von Rang und Rolle unterschiedliche Verwaltungsfunktionen anzeigen.</p></div>
+          </section>
+        </main>
       </div>
-
-      <div class="user-info">
-        <div>Angemeldet als: <strong id="member-name">-</strong></div>
-        <div id="member-rank">-</div>
-        <button id="logout-button" class="logout-button" type="button">Abmelden</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="dashboard">
-        <div class="card stat-card">
-          <h2>Brigadekasse</h2>
-          <div id="balance" class="value">$0.00</div>
-        </div>
-
-        <div class="card stat-card">
-          <h2>Ressourcen</h2>
-          <div id="resource-count" class="value">0</div>
-        </div>
-
-        <div class="card stat-card">
-          <h2>Offene Aufträge</h2>
-          <div id="order-count" class="value">0</div>
-        </div>
-
-        <div class="card stat-card">
-          <h2>Mitglieder</h2>
-          <div id="member-count" class="value">-</div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>Ressourcenbestand</h2>
-        <div class="card">
-          <div id="resources-list" class="resource-list">Lade Ressourcen...</div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>Aufträge</h2>
-        <div class="card">
-          <div id="orders-list" class="orders-list">Lade Aufträge...</div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>Willkommen</h2>
-        <div class="card">
-          <p class="empty">Willkommen im Verwaltungssystem der Brigade.</p>
-        </div>
-      </section>
-    </main>
+    </div>
   </div>
 
   <script>
@@ -507,6 +583,8 @@
       button.disabled = loading;
       button.textContent = loading ? loadingText : normalText;
     }
+
+    initNavigation();
 
     // =========================================================
     // LOGIN
@@ -738,6 +816,32 @@
     });
 
     // =========================================================
+    // SEITENNAVIGATION
+    // =========================================================
+
+    function showPage(pageName) {
+      document.querySelectorAll("[data-page-content]").forEach(page => {
+        page.classList.toggle("active", page.dataset.pageContent === pageName);
+      });
+
+      document.querySelectorAll(".nav-button").forEach(button => {
+        button.classList.toggle("active", button.dataset.page === pageName);
+      });
+
+      window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}#${pageName}`);
+    }
+
+    function initNavigation() {
+      document.querySelectorAll(".nav-button").forEach(button => {
+        button.addEventListener("click", () => showPage(button.dataset.page));
+      });
+
+      const initialPage = window.location.hash.replace("#", "");
+      const validPages = ["overview", "members", "finances", "resources", "orders", "production", "weapons", "admin"];
+      showPage(validPages.includes(initialPage) ? initialPage : "overview");
+    }
+
+    // =========================================================
     // MITGLIED
     // =========================================================
 
@@ -800,12 +904,16 @@
       const currency = data.currency || "USD";
 
       try {
-        $("balance").textContent = new Intl.NumberFormat("en-US", {
+        const formatted = new Intl.NumberFormat("en-US", {
           style: "currency",
           currency
         }).format(balance);
+        $("balance").textContent = formatted;
+        $("finance-page-balance").textContent = formatted;
       } catch (_) {
-        $("balance").textContent = `${balance.toFixed(2)} ${escapeHtml(currency)}`;
+        const formatted = `${balance.toFixed(2)} ${escapeHtml(currency)}`;
+        $("balance").textContent = formatted;
+        $("finance-page-balance").textContent = formatted;
       }
     }
 
@@ -847,6 +955,8 @@
           </div>
         `;
       }).join("");
+      const resourceHtml = $("resources-list").innerHTML;
+      $("resources-page-list").innerHTML = resourceHtml;
     }
 
     // =========================================================
@@ -894,6 +1004,8 @@
           </div>
         `;
       }).join("");
+      const orderHtml = $("orders-list").innerHTML;
+      $("orders-page-list").innerHTML = orderHtml;
     }
 
     // =========================================================
