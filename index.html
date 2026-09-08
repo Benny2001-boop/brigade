@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Brigade Verwaltung</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: Arial, sans-serif;
@@ -24,16 +21,22 @@
             background: #1f2937;
             padding: 20px 30px;
             border-bottom: 1px solid #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
         }
 
-        header h1 {
-            font-size: 24px;
-        }
+        header h1 { font-size: 24px; }
+        header p { color: #9ca3af; margin-top: 5px; }
 
-        header p {
+        .user-info {
+            text-align: right;
             color: #9ca3af;
-            margin-top: 5px;
+            font-size: 14px;
         }
+
+        .user-info strong { color: #f3f4f6; }
 
         main {
             max-width: 1200px;
@@ -65,60 +68,505 @@
             font-weight: bold;
         }
 
-        .section {
-            margin-top: 30px;
+        .section { margin-top: 30px; }
+        .section h2 { margin-bottom: 15px; }
+
+        button {
+            background: #374151;
+            color: #f3f4f6;
+            border: 1px solid #4b5563;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
         }
 
-        .section h2 {
-            margin-bottom: 15px;
+        button:hover { background: #4b5563; }
+
+        .login-container {
+            max-width: 420px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        .login-card h1 { margin-bottom: 10px; }
+        .login-card p { color: #9ca3af; margin-bottom: 25px; }
+
+        .login-card label {
+            display: block;
+            margin-bottom: 7px;
+            color: #d1d5db;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+            border-radius: 6px;
+        }
+
+        .login-card button {
+            width: 100%;
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .login-card button:hover { background: #1d4ed8; }
+
+        .error { color: #f87171; margin-top: 15px; }
+        .success { color: #4ade80; margin-top: 15px; }
+
+        #app { display: none; }
+        #loading {
+            text-align: center;
+            margin-top: 100px;
+            color: #9ca3af;
+        }
+
+        .resource-list { margin-top: 10px; }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .resource-item:last-child { border-bottom: none; }
+        .orders-list { color: #9ca3af; }
+
+        @media (max-width: 700px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .user-info {
+                text-align: left;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <h1>Brigade Verwaltung</h1>
-        <p>Zentrale Verwaltung von Finanzen, Ressourcen und Aufträgen</p>
-    </header>
+    <div id="loading">Lade Brigade Verwaltung...</div>
 
-    <main>
+    <div id="login" class="login-container" style="display: none;">
+        <div class="login-card">
+            <h1>Brigade Verwaltung</h1>
+            <p>Bitte melde dich mit deinem Brigade-Konto an.</p>
 
-        <section class="dashboard">
+            <form id="login-form">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" required autocomplete="email">
 
-            <div class="card">
-                <h2>Brigadekasse</h2>
-                <div class="value">$0</div>
+                <label for="password">Passwort</label>
+                <input type="password" id="password" required autocomplete="current-password">
+
+                <button type="submit">Anmelden</button>
+            </form>
+
+            <div id="login-message"></div>
+        </div>
+    </div>
+
+    <div id="app">
+        <header>
+            <div>
+                <h1>Brigade Verwaltung</h1>
+                <p>Zentrale Verwaltung von Finanzen, Ressourcen und Aufträgen</p>
             </div>
 
-            <div class="card">
-                <h2>Ressourcen</h2>
-                <div class="value">0</div>
+            <div class="user-info">
+                <div>
+                    Angemeldet als:
+                    <strong id="member-name">-</strong>
+                </div>
+                <div id="member-rank">-</div>
+                <br>
+                <button id="logout-button">Abmelden</button>
             </div>
+        </header>
 
-            <div class="card">
-                <h2>Offene Aufträge</h2>
-                <div class="value">0</div>
-            </div>
+        <main>
+            <section class="dashboard">
+                <div class="card">
+                    <h2>Brigadekasse</h2>
+                    <div class="value" id="balance">$0.00</div>
+                </div>
 
-            <div class="card">
-                <h2>Mitglieder</h2>
-                <div class="value">0</div>
-            </div>
+                <div class="card">
+                    <h2>Ressourcen</h2>
+                    <div class="value" id="resource-count">0</div>
+                </div>
 
-        </section>
+                <div class="card">
+                    <h2>Offene Aufträge</h2>
+                    <div class="value" id="order-count">0</div>
+                </div>
 
-        <section class="section">
-            <h2>Willkommen</h2>
+                <div class="card">
+                    <h2>Mitglieder</h2>
+                    <div class="value" id="member-count">0</div>
+                </div>
+            </section>
 
-            <div class="card">
-                <p>
-                    Willkommen im Verwaltungssystem der Brigade.
-                </p>
-            </div>
-        </section>
+            <section class="section">
+                <h2>Ressourcenbestand</h2>
+                <div class="card">
+                    <div id="resources-list" class="resource-list">
+                        Lade Ressourcen...
+                    </div>
+                </div>
+            </section>
 
-    </main>
+            <section class="section">
+                <h2>Aufträge</h2>
+                <div class="card">
+                    <div id="orders-list" class="orders-list">
+                        Lade Aufträge...
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Willkommen</h2>
+                <div class="card">
+                    <p>Willkommen im Verwaltungssystem der Brigade.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+    // =====================================================
+    // SUPABASE
+    // =====================================================
+
+    const SUPABASE_URL = "https://gcdmmzchqcwshwiwqafa.supabase.co";
+
+    const SUPABASE_KEY = "sb_publishable_TjviimwkfAiJALkKUqJKZA_Zpyl7rQC";
+
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+    // =====================================================
+    // ELEMENTE
+    // =====================================================
+
+    const loadingElement = document.getElementById("loading");
+    const loginElement = document.getElementById("login");
+    const appElement = document.getElementById("app");
+    const loginForm = document.getElementById("login-form");
+    const loginMessage = document.getElementById("login-message");
+    const logoutButton = document.getElementById("logout-button");
+
+
+    // =====================================================
+    // LOGIN
+    // =====================================================
+
+    loginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        loginMessage.innerHTML = "";
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            loginMessage.innerHTML =
+                `<div class="error">Anmeldung fehlgeschlagen: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        await checkSession();
+    });
+
+
+    // =====================================================
+    // LOGOUT
+    // =====================================================
+
+    logoutButton.addEventListener("click", async function() {
+        await supabaseClient.auth.signOut();
+
+        appElement.style.display = "none";
+        loginElement.style.display = "block";
+    });
+
+
+    // =====================================================
+    // SESSION
+    // =====================================================
+
+    async function checkSession() {
+        const {
+            data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        loadingElement.style.display = "none";
+
+        if (!session) {
+            appElement.style.display = "none";
+            loginElement.style.display = "block";
+            return;
+        }
+
+        loginElement.style.display = "none";
+        appElement.style.display = "block";
+
+        await loadMember();
+        await loadFinances();
+        await loadResources();
+        await loadOrders();
+        await loadMemberCount();
+    }
+
+
+    // =====================================================
+    // MITGLIED
+    // =====================================================
+
+    async function loadMember() {
+        const {
+            data: { user }
+        } = await supabaseClient.auth.getUser();
+
+        if (!user) return;
+
+        const { data, error } = await supabaseClient
+            .from("members")
+            .select("name, rank, role")
+            .eq("auth_user_id", user.id)
+            .eq("active", true)
+            .single();
+
+        if (error) {
+            console.error("Mitglied konnte nicht geladen werden:", error);
+
+            document.getElementById("member-name").textContent = "Unbekannt";
+            document.getElementById("member-rank").textContent =
+                "Keine aktive Brigade-Zuordnung";
+
+            return;
+        }
+
+        document.getElementById("member-name").textContent =
+            data.name || "Unbekannt";
+
+        document.getElementById("member-rank").textContent =
+            `${data.rank || "-"} · ${data.role || "-"}`;
+    }
+
+
+    // =====================================================
+    // FINANZEN
+    // =====================================================
+
+    async function loadFinances() {
+        const { data, error } = await supabaseClient
+            .from("brigade_finances")
+            .select("balance, currency")
+            .eq("id", 1)
+            .single();
+
+        if (error) {
+            console.error("Finanzen konnten nicht geladen werden:", error);
+            document.getElementById("balance").textContent = "Fehler";
+            return;
+        }
+
+        const balance = Number(data.balance || 0);
+
+        document.getElementById("balance").textContent =
+            new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: data.currency || "USD"
+            }).format(balance);
+    }
+
+
+    // =====================================================
+    // RESSOURCEN
+    // =====================================================
+
+    async function loadResources() {
+        const { data, error } = await supabaseClient
+            .from("resources")
+            .select("name, quantity, unit")
+            .eq("active", true)
+            .order("id");
+
+        if (error) {
+            console.error("Ressourcen konnten nicht geladen werden:", error);
+
+            document.getElementById("resources-list").textContent =
+                "Ressourcen konnten nicht geladen werden.";
+
+            return;
+        }
+
+        document.getElementById("resource-count").textContent = data.length;
+
+        const list = document.getElementById("resources-list");
+
+        if (data.length === 0) {
+            list.textContent = "Keine Ressourcen vorhanden.";
+            return;
+        }
+
+        list.innerHTML = data.map(resource => {
+            const unit = resource.unit
+                ? ` ${escapeHtml(resource.unit)}`
+                : "";
+
+            return `
+                <div class="resource-item">
+                    <span>${escapeHtml(resource.name)}</span>
+                    <strong>${Number(resource.quantity || 0)}${unit}</strong>
+                </div>
+            `;
+        }).join("");
+    }
+
+
+    // =====================================================
+    // AUFTRÄGE
+    // =====================================================
+
+    async function loadOrders() {
+        const { data, error } = await supabaseClient
+            .from("orders")
+            .select(`
+                id,
+                menge,
+                status,
+                created_at,
+                weapons (
+                    name
+                )
+            `)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Aufträge konnten nicht geladen werden:", error);
+
+            document.getElementById("orders-list").textContent =
+                "Aufträge konnten nicht geladen werden.";
+
+            return;
+        }
+
+        const openOrders = data.filter(order =>
+            !["Fertig", "Ausgeliefert", "Abgebrochen"].includes(order.status)
+        );
+
+        document.getElementById("order-count").textContent =
+            openOrders.length;
+
+        const list = document.getElementById("orders-list");
+
+        if (data.length === 0) {
+            list.textContent = "Keine Aufträge vorhanden.";
+            return;
+        }
+
+        list.innerHTML = data.map(order => {
+            const weaponName = order.weapons?.name || "Unbekannt";
+
+            return `
+                <div class="resource-item">
+                    <span>
+                        #${order.id} – ${escapeHtml(weaponName)} × ${order.menge}
+                    </span>
+                    <strong>${escapeHtml(order.status)}</strong>
+                </div>
+            `;
+        }).join("");
+    }
+
+
+    // =====================================================
+    // MITGLIEDER
+    // =====================================================
+
+    async function loadMemberCount() {
+        // Normale Mitglieder dürfen laut RLS nur ihren eigenen Datensatz sehen.
+        // Deshalb zeigen wir hier zunächst eine sichere eigene Mitgliedsanzeige.
+        const { data, error } = await supabaseClient
+            .from("members")
+            .select("id")
+            .eq("active", true);
+
+        if (error) {
+            console.error("Mitglieder konnten nicht geladen werden:", error);
+            document.getElementById("member-count").textContent = "-";
+            return;
+        }
+
+        document.getElementById("member-count").textContent =
+            data.length;
+    }
+
+
+    // =====================================================
+    // HTML ESCAPING
+    // =====================================================
+
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    // =====================================================
+    // AUTH EVENTS
+    // =====================================================
+
+    supabaseClient.auth.onAuthStateChange(async function(event, session) {
+        if (event === "SIGNED_OUT") {
+            appElement.style.display = "none";
+            loginElement.style.display = "block";
+        }
+
+        if (event === "SIGNED_IN" && session) {
+            await checkSession();
+        }
+    });
+
+
+    // =====================================================
+    // START
+    // =====================================================
+
+    checkSession();
+</script>
 
 </body>
 </html>
