@@ -201,6 +201,51 @@
     .profile-missing-card h3 { margin:0 0 7px; } .profile-missing-card p { margin:0 0 14px; color:var(--muted); line-height:1.5; }
     .empty { color:var(--muted); margin:0; }
 
+
+    .header-profile-button { margin:0; padding:8px 11px; font-size:12px; }
+    .label-hint { color:var(--muted-2); font-size:11px; font-weight:400; }
+    textarea {
+      width:100%; resize:vertical; min-height:110px; margin:0 0 18px; padding:13px 14px;
+      border:1px solid var(--border); border-radius:9px; background:#0c0e11; color:var(--text); outline:none;
+      font:inherit; line-height:1.5; transition:border-color .18s, box-shadow .18s, background .18s;
+    }
+    textarea:focus { border-color:#8a4351; background:#101216; box-shadow:0 0 0 3px var(--accent-soft); }
+    .profile-edit-card { width:min(100%,600px); }
+    .modal-heading-row { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+    .modal-close {
+      width:34px; height:34px; flex:0 0 34px; border:1px solid #353941; border-radius:8px;
+      background:#202329; color:#c8c3ba; font-size:22px; line-height:1;
+    }
+    .modal-close:hover { background:#2a2e35; }
+    .profile-preview {
+      display:flex; align-items:center; gap:13px; margin:0 0 22px; padding:13px;
+      border:1px solid #353941; border-radius:10px; background:#101216;
+    }
+    .profile-preview-avatar,.profile-summary-avatar {
+      display:grid; place-items:center; border:1px solid #5a4a36; color:#e0c997;
+      background:linear-gradient(145deg,#352f27,#1a1816); font-family:Georgia,serif; font-weight:800;
+    }
+    .profile-preview-avatar { width:48px; height:48px; border-radius:11px; }
+    .profile-preview strong { display:block; font-size:15px; }
+    .profile-preview span { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+    .profile-edit-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .profile-edit-actions .primary-button,.profile-edit-actions .secondary-button { width:100%; margin:0; }
+    .profile-summary-card { background:linear-gradient(145deg,rgba(29,27,27,.98),rgba(15,17,20,.98)); }
+    .profile-summary-top { display:flex; align-items:center; gap:15px; }
+    .profile-summary-avatar { width:58px; height:58px; flex:0 0 58px; border-radius:13px; font-size:15px; }
+    .profile-summary-main { min-width:0; flex:1; }
+    .eyebrow { color:#827b6e; text-transform:uppercase; letter-spacing:.16em; font-size:9px; margin-bottom:3px; }
+    .profile-summary-main h3 { margin:0; font-family:Georgia,serif; font-size:21px; }
+    .profile-summary-rank { margin-top:5px; color:#bda99b; font-size:11px; }
+    .profile-summary-motto { margin-top:16px; color:#d3bd91; font-family:Georgia,serif; font-style:italic; }
+    .profile-summary-bio { margin:7px 0 0; color:var(--muted); line-height:1.55; font-size:13px; }
+    @media (max-width:520px) {
+      .profile-edit-actions { grid-template-columns:1fr; }
+      .profile-summary-top { align-items:flex-start; flex-wrap:wrap; }
+      .profile-summary-top .profile-action-button { margin-left:auto; }
+      .header-profile-button { display:none; }
+    }
+
     @media (max-width:800px) {
       .app-header { padding:12px 16px; }
       .app-layout { grid-template-columns:1fr; }
@@ -218,6 +263,60 @@
       .user-details { min-width:0; }
       .content { padding-top:20px; }
     }
+
+
+    /* =========================================================
+       EINSTELLUNGSMENÜ & FARBTHEMES
+       ========================================================= */
+    body[data-theme="bordeaux"] { --accent:#8b2638; --accent-dark:#5d1724; --accent-hover:#a63246; --accent-soft:rgba(139,38,56,.13); --gold:#b99a61; --gold-soft:rgba(185,154,97,.11); }
+    body[data-theme="steel"] { --accent:#536b7d; --accent-dark:#344754; --accent-hover:#69879b; --accent-soft:rgba(83,107,125,.14); --gold:#aeb9bd; --gold-soft:rgba(174,185,189,.10); --red:#d8848e; --green:#80aa92; --yellow:#c4b17a; }
+    body[data-theme="night"] { --accent:#3d5a80; --accent-dark:#273b55; --accent-hover:#5275a3; --accent-soft:rgba(61,90,128,.14); --gold:#9eb6d1; --gold-soft:rgba(158,182,209,.10); }
+    body[data-theme="forest"] { --accent:#41634c; --accent-dark:#2b4333; --accent-hover:#557d61; --accent-soft:rgba(65,99,76,.14); --gold:#a9ad80; --gold-soft:rgba(169,173,128,.10); }
+    body[data-theme="gold"] { --accent:#876f3f; --accent-dark:#584827; --accent-hover:#a48a52; --accent-soft:rgba(135,111,63,.14); --gold:#d1b56f; --gold-soft:rgba(209,181,111,.12); }
+
+    body[data-theme="steel"] { background:radial-gradient(circle at 50% -12%,rgba(83,107,125,.16),transparent 34%),linear-gradient(180deg,#080a0c 0%,#07090b 100%); }
+    body[data-theme="night"] { background:radial-gradient(circle at 50% -12%,rgba(61,90,128,.18),transparent 34%),linear-gradient(180deg,#07090d 0%,#05070a 100%); }
+    body[data-theme="forest"] { background:radial-gradient(circle at 50% -12%,rgba(65,99,76,.17),transparent 34%),linear-gradient(180deg,#080b09 0%,#060806 100%); }
+    body[data-theme="gold"] { background:radial-gradient(circle at 50% -12%,rgba(135,111,63,.17),transparent 34%),linear-gradient(180deg,#0a0a08 0%,#070806 100%); }
+
+    body[data-theme] .app-header { background:rgba(10,11,13,.91); }
+    body[data-theme] .nav-button.active { background:linear-gradient(90deg,var(--accent-soft),transparent); border-color:color-mix(in srgb,var(--accent) 30%,transparent); box-shadow:inset 3px 0 0 var(--accent); }
+    body[data-theme] .nav-button.active .nav-icon { color:var(--gold); }
+    body[data-theme] .page-header::after { background:var(--accent); }
+    body[data-theme] .primary-button { border-color:var(--accent); background:linear-gradient(180deg,var(--accent-hover),var(--accent-dark)); }
+    body[data-theme] .primary-button:hover:not(:disabled) { filter:brightness(1.1); }
+    body[data-theme] input:focus,body[data-theme] textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+    .settings-button { width:38px; height:38px; flex:0 0 38px; margin:0; padding:0; display:grid; place-items:center; border:1px solid #34373e; border-radius:8px; background:#17191e; color:#bfc0c3; font-size:17px; transition:.16s; }
+    .settings-button:hover,.settings-button.active { background:var(--accent-soft); border-color:var(--accent); color:var(--gold); transform:translateY(-1px); }
+    .settings-menu { position:fixed; top:68px; right:28px; z-index:500; width:345px; max-width:calc(100vw - 30px); background:linear-gradient(145deg,rgba(27,30,35,.99),rgba(12,14,17,.99)); border:1px solid #3a3d44; border-radius:14px; box-shadow:0 25px 70px rgba(0,0,0,.55); overflow:hidden; animation:settingsOpen .15s ease-out; }
+    .settings-menu.hidden { display:none; }
+    @keyframes settingsOpen { from{opacity:0;transform:translateY(-5px) scale(.98)} to{opacity:1;transform:none} }
+    .settings-header { padding:17px 18px 14px; border-bottom:1px solid #292c32; background:linear-gradient(90deg,var(--accent-soft),transparent 70%); }
+    .settings-header h3 { margin:0; font-family:Georgia,"Times New Roman",serif; font-size:18px; }
+    .settings-header p { margin:5px 0 0; color:var(--muted); font-size:11px; }
+    .settings-section { padding:14px 17px; border-bottom:1px solid #25282e; }
+    .settings-section:last-child { border-bottom:0; }
+    .settings-title { margin:0 0 10px; color:#777b83; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.18em; }
+    .settings-profile { display:flex; align-items:center; gap:11px; }
+    .settings-avatar { width:44px; height:44px; flex:0 0 44px; display:grid; place-items:center; border-radius:10px; background:linear-gradient(145deg,#352f27,#1a1816); border:1px solid #5a4a36; color:#e0c997; font-family:Georgia,serif; font-weight:800; font-size:12px; }
+    .settings-profile-info { min-width:0; flex:1; }
+    .settings-profile-name { color:var(--text); font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .settings-profile-rank { margin-top:4px; color:var(--muted); font-size:10px; }
+    .settings-profile-button { width:auto; margin:0; padding:7px 10px; border:1px solid var(--accent); border-radius:7px; background:var(--accent-soft); color:#e4d9d1; font-size:11px; }
+    .settings-profile-button:hover { filter:brightness(1.15); }
+    .theme-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .theme-option { position:relative; min-height:72px; padding:9px; border:1px solid #34373e; border-radius:9px; background:#14161a; color:#d8d3ca; text-align:left; transition:.15s; }
+    .theme-option:hover { border-color:#555a63; background:#1b1e23; transform:translateY(-1px); }
+    .theme-option.active { border-color:var(--theme-accent); box-shadow:0 0 0 1px var(--theme-accent); }
+    .theme-preview { display:flex; gap:4px; height:20px; margin-bottom:8px; }
+    .theme-preview span { flex:1; border-radius:4px; }
+    .theme-name { font-size:10px; font-weight:700; }
+    .theme-description { margin-top:2px; color:#777b83; font-size:8px; }
+    .theme-check { position:absolute; top:7px; right:7px; width:17px; height:17px; display:none; place-items:center; border-radius:50%; background:var(--theme-accent); color:#fff; font-size:9px; }
+    .theme-option.active .theme-check { display:grid; }
+    @media (max-width:800px) { .settings-menu { top:62px; right:15px; } }
+    @media (max-width:520px) { .settings-menu { width:calc(100vw - 30px); } .settings-profile-button { padding:7px 8px; } }
   </style>
 </head>
 
@@ -311,9 +410,39 @@
             <div id="member-name" class="user-name">Konto</div>
             <div id="member-rank" class="user-rank">Wird geladen…</div>
           </div>
+          <button id="open-settings-button" class="settings-button" type="button" aria-label="Einstellungen" aria-expanded="false" title="Einstellungen">⚙</button>
+          <button id="open-profile-button" class="profile-action-button header-profile-button" type="button">Profil</button>
           <button id="logout-button" class="logout-button" type="button">Abmelden</button>
         </div>
       </header>
+
+      <div id="settings-menu" class="settings-menu hidden" role="dialog" aria-label="Brigade Einstellungen">
+        <div class="settings-header">
+          <h3>Einstellungen</h3>
+          <p>Profil und persönliches Seitendesign</p>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">Mein Profil</div>
+          <div class="settings-profile">
+            <div id="settings-avatar" class="settings-avatar">?</div>
+            <div class="settings-profile-info">
+              <div id="settings-profile-name" class="settings-profile-name">Wird geladen…</div>
+              <div id="settings-profile-rank" class="settings-profile-rank">Wird geladen…</div>
+            </div>
+            <button id="settings-profile-button" class="settings-profile-button" type="button">Bearbeiten</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">Seitendesign</div>
+          <div class="theme-grid">
+            <button class="theme-option" type="button" data-theme-select="bordeaux" style="--theme-accent:#8b2638"><div class="theme-preview"><span style="background:#08090b"></span><span style="background:#15171b"></span><span style="background:#8b2638"></span><span style="background:#b99a61"></span></div><div class="theme-name">Bordeaux</div><div class="theme-description">Brigade-Standard</div><div class="theme-check">✓</div></button>
+            <button class="theme-option" type="button" data-theme-select="steel" style="--theme-accent:#536b7d"><div class="theme-preview"><span style="background:#080a0c"></span><span style="background:#15191d"></span><span style="background:#536b7d"></span><span style="background:#aeb9bd"></span></div><div class="theme-name">Stahl</div><div class="theme-description">Kühl und sachlich</div><div class="theme-check">✓</div></button>
+            <button class="theme-option" type="button" data-theme-select="night" style="--theme-accent:#3d5a80"><div class="theme-preview"><span style="background:#07090d"></span><span style="background:#10151d"></span><span style="background:#3d5a80"></span><span style="background:#9eb6d1"></span></div><div class="theme-name">Nacht</div><div class="theme-description">Dunkles Blau</div><div class="theme-check">✓</div></button>
+            <button class="theme-option" type="button" data-theme-select="forest" style="--theme-accent:#41634c"><div class="theme-preview"><span style="background:#080b09"></span><span style="background:#151a17"></span><span style="background:#41634c"></span><span style="background:#a9ad80"></span></div><div class="theme-name">Wald</div><div class="theme-description">Dunkles Grün</div><div class="theme-check">✓</div></button>
+            <button class="theme-option" type="button" data-theme-select="gold" style="--theme-accent:#876f3f"><div class="theme-preview"><span style="background:#0a0a08"></span><span style="background:#191814"></span><span style="background:#876f3f"></span><span style="background:#d1b56f"></span></div><div class="theme-name">Gold</div><div class="theme-description">Edel und repräsentativ</div><div class="theme-check">✓</div></button>
+          </div>
+        </div>
+      </div>
 
       <div id="profile-setup-overlay" class="profile-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-setup-title">
         <div class="profile-setup-card">
@@ -327,6 +456,43 @@
             <button id="profile-cancel-button" class="secondary-button" type="button">Später</button>
           </form>
           <div id="profile-setup-message" class="message" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div id="profile-edit-overlay" class="profile-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+        <div class="profile-setup-card profile-edit-card">
+          <div class="modal-heading-row">
+            <div>
+              <h2 id="profile-edit-title">Mein Brigade-Profil</h2>
+              <p>Gestalte dein persönliches Profil. Rang und Rolle werden von der Verwaltung festgelegt.</p>
+            </div>
+            <button id="profile-edit-close" class="modal-close" type="button" aria-label="Schließen">×</button>
+          </div>
+
+          <div class="profile-preview">
+            <div id="profile-edit-avatar" class="profile-preview-avatar">UK</div>
+            <div>
+              <strong id="profile-preview-name">Uranov Kimsky</strong>
+              <span id="profile-preview-rank">Mitglied · Mitglied</span>
+            </div>
+          </div>
+
+          <form id="profile-edit-form" novalidate>
+            <label for="edit-profile-name">Brigade-Name</label>
+            <input id="edit-profile-name" type="text" required maxlength="100" autocomplete="name" placeholder="Dein Name">
+
+            <label for="edit-profile-motto">Persönliches Motto <span class="label-hint">optional</span></label>
+            <input id="edit-profile-motto" type="text" maxlength="160" placeholder="z. B. Loyal bis zum Ende.">
+
+            <label for="edit-profile-bio">Über mich <span class="label-hint">optional</span></label>
+            <textarea id="edit-profile-bio" maxlength="500" rows="5" placeholder="Ein kurzer Text über dich innerhalb der Brigade..."></textarea>
+
+            <div class="profile-edit-actions">
+              <button id="profile-save-button" class="primary-button" type="submit">Profil speichern</button>
+              <button id="profile-edit-cancel" class="secondary-button" type="button">Abbrechen</button>
+            </div>
+          </form>
+          <div id="profile-edit-message" class="message" aria-live="polite"></div>
         </div>
       </div>
 
@@ -360,6 +526,20 @@
               <h3>Dein Brigade-Profil fehlt noch</h3>
               <p>Dein Konto ist angemeldet, aber noch keinem Brigade-Mitglied zugeordnet.</p>
               <button id="open-profile-setup-button" class="profile-action-button" type="button">Profil erstellen</button>
+            </div>
+
+            <div id="profile-summary-card" class="card profile-summary-card" style="margin-bottom:20px;">
+              <div class="profile-summary-top">
+                <div id="profile-summary-avatar" class="profile-summary-avatar">?</div>
+                <div class="profile-summary-main">
+                  <div class="eyebrow">Brigade-Profil</div>
+                  <h3 id="profile-summary-name">Wird geladen…</h3>
+                  <div id="profile-summary-rank" class="profile-summary-rank">Wird geladen…</div>
+                </div>
+                <button id="open-profile-summary-button" class="profile-action-button" type="button">Bearbeiten</button>
+              </div>
+              <div id="profile-summary-motto" class="profile-summary-motto"></div>
+              <p id="profile-summary-bio" class="profile-summary-bio">Dein persönliches Brigade-Profil.</p>
             </div>
 
             <div class="dashboard">
@@ -452,6 +632,8 @@
     const appElement = $("app");
     const profileSetupOverlay = $("profile-setup-overlay");
     const profileSetupForm = $("profile-setup-form");
+    const profileEditOverlay = $("profile-edit-overlay");
+    const profileEditForm = $("profile-edit-form");
 
     const loginForm = $("login-form");
     const signupForm = $("signup-form");
@@ -577,7 +759,105 @@
       $("profile-missing-card").classList.toggle("hidden", !show);
     }
 
+    let currentMember = null;
+
+    function getInitials(name) {
+      const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return "?";
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function updateProfilePreview() {
+      const name = $("edit-profile-name").value.trim() || "Dein Name";
+      $("profile-edit-avatar").textContent = getInitials(name);
+      $("profile-preview-name").textContent = name;
+      const rank = currentMember?.rank || "Mitglied";
+      const role = currentMember?.role ? ` · ${currentMember.role}` : "";
+      $("profile-preview-rank").textContent = rank + role;
+    }
+
+    function openProfileEditor() {
+      if (!currentMember) return;
+      $("edit-profile-name").value = currentMember.name || "";
+      $("edit-profile-motto").value = currentMember.motto || "";
+      $("edit-profile-bio").value = currentMember.bio || "";
+      setMessage($("profile-edit-message"), "");
+      updateProfilePreview();
+      profileEditOverlay.classList.remove("hidden");
+      setTimeout(() => $("edit-profile-name").focus(), 50);
+    }
+
+    function closeProfileEditor() {
+      profileEditOverlay.classList.add("hidden");
+    }
+
+    function updateProfileSummary() {
+      if (!currentMember) return;
+      const name = currentMember.name || "Mitglied";
+      const rank = currentMember.rank || "Mitglied";
+      const role = currentMember.role ? ` · ${currentMember.role}` : "";
+      $("profile-summary-name").textContent = name;
+      $("profile-summary-avatar").textContent = getInitials(name);
+      $("profile-summary-rank").textContent = rank + role;
+      $("profile-summary-motto").textContent = currentMember.motto ? `„${currentMember.motto}“` : "";
+      $("profile-summary-bio").textContent = currentMember.bio || "Dein persönliches Brigade-Profil.";
+    }
+
     initNavigation();
+
+    // =========================================================
+    // PROFIL BEARBEITEN
+    // =========================================================
+
+    $("open-profile-button").addEventListener("click", openProfileEditor);
+    $("open-profile-summary-button").addEventListener("click", openProfileEditor);
+    $("profile-edit-close").addEventListener("click", closeProfileEditor);
+    $("profile-edit-cancel").addEventListener("click", closeProfileEditor);
+    profileEditOverlay.addEventListener("click", (event) => {
+      if (event.target === profileEditOverlay) closeProfileEditor();
+    });
+    $("edit-profile-name").addEventListener("input", updateProfilePreview);
+
+    profileEditForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!currentMember?.id) return;
+
+      const name = $("edit-profile-name").value.trim();
+      const motto = $("edit-profile-motto").value.trim();
+      const bio = $("edit-profile-bio").value.trim();
+      const button = $("profile-save-button");
+
+      if (!name) {
+        setMessage($("profile-edit-message"), "Bitte einen Brigade-Namen eingeben.", "error");
+        return;
+      }
+
+      setButtonLoading(button, true, "Wird gespeichert...", "Profil speichern");
+      try {
+        const { data, error } = await supabaseClient.from("members")
+          .update({ name, motto, bio })
+          .eq("id", currentMember.id)
+          .eq("auth_user_id", currentMember.auth_user_id)
+          .select("id, name, rank, role, active, auth_user_id, motto, bio")
+          .single();
+
+        if (error) throw error;
+        currentMember = data;
+        $("member-name").textContent = data.name;
+        $("member-avatar").textContent = getInitials(data.name);
+        $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
+        updateProfileSummary();
+        updateSettingsProfile();
+        setMessage($("profile-edit-message"), "Profil gespeichert.", "success");
+        setTimeout(closeProfileEditor, 500);
+      } catch (error) {
+        console.error("Profil konnte nicht gespeichert werden:", error);
+        setMessage($("profile-edit-message"), "Profil konnte nicht gespeichert werden: " + getErrorMessage(error), "error");
+      } finally {
+        setButtonLoading(button, false, "Wird gespeichert...", "Profil speichern");
+      }
+    });
 
     // =========================================================
     // PROFIL ERSTELLEN
@@ -606,8 +886,8 @@
         if (userError || !user) throw userError || new Error("Kein angemeldeter Benutzer gefunden.");
 
         const { data, error } = await supabaseClient.from("members").insert({
-          name, rank: "Mitglied", role: "Mitglied", active: true, auth_user_id: user.id
-        }).select("id, name, rank, role, active").single();
+          name, rank: "Mitglied", role: "Mitglied", active: true, auth_user_id: user.id, motto: "", bio: ""
+        }).select("id, name, rank, role, active, auth_user_id, motto, bio").single();
 
         if (error) {
           if (String(error.code || "").toLowerCase() === "23505") {
@@ -620,6 +900,7 @@
         if (!data) throw new Error("Das Profil wurde nicht zurückgegeben.");
         setProfileMissing(false);
         hideProfileSetup();
+        currentMember = data;
         await loadMember();
       } catch (error) {
         console.error("Profil konnte nicht erstellt werden:", error);
@@ -844,6 +1125,68 @@
     });
 
     // =========================================================
+    // EINSTELLUNGEN / FARBTHEMES
+    // =========================================================
+    const settingsButton = $("open-settings-button");
+    const settingsMenu = $("settings-menu");
+    const themeButtons = document.querySelectorAll("[data-theme-select]");
+    const validThemes = ["bordeaux", "steel", "night", "forest", "gold"];
+
+    function applyTheme(theme) {
+      if (!validThemes.includes(theme)) theme = "bordeaux";
+      document.body.dataset.theme = theme;
+      themeButtons.forEach(button => button.classList.toggle("active", button.dataset.themeSelect === theme));
+      try { localStorage.setItem("brigade-theme", theme); } catch (_) {}
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = ({bordeaux:"#8b2638",steel:"#536b7d",night:"#3d5a80",forest:"#41634c",gold:"#876f3f"})[theme];
+    }
+
+    function loadTheme() {
+      let theme = "bordeaux";
+      try { theme = localStorage.getItem("brigade-theme") || theme; } catch (_) {}
+      applyTheme(theme);
+    }
+
+    function updateSettingsProfile() {
+      if (currentMember) {
+        const name = currentMember.name || "Mitglied";
+        const role = currentMember.role ? ` · ${currentMember.role}` : "";
+        $("settings-avatar").textContent = getInitials(name);
+        $("settings-profile-name").textContent = name;
+        $("settings-profile-rank").textContent = `${currentMember.rank || "Mitglied"}${role}`;
+      }
+    }
+
+    function closeSettings() {
+      settingsMenu.classList.add("hidden");
+      settingsButton.classList.remove("active");
+      settingsButton.setAttribute("aria-expanded", "false");
+    }
+
+    settingsButton.addEventListener("click", event => {
+      event.stopPropagation();
+      const closed = settingsMenu.classList.toggle("hidden");
+      settingsButton.classList.toggle("active", !closed);
+      settingsButton.setAttribute("aria-expanded", String(!closed));
+      if (!closed) updateSettingsProfile();
+    });
+
+    settingsMenu.addEventListener("click", event => event.stopPropagation());
+    document.addEventListener("click", () => closeSettings());
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeSettings(); });
+
+    themeButtons.forEach(button => {
+      button.addEventListener("click", () => applyTheme(button.dataset.themeSelect));
+    });
+
+    $("settings-profile-button").addEventListener("click", () => {
+      closeSettings();
+      openProfileEditor();
+    });
+
+    loadTheme();
+
+    // =========================================================
     // LOGOUT
     // =========================================================
 
@@ -903,7 +1246,7 @@
       $("member-avatar").textContent = authName.trim().slice(0, 2) || "?";
 
       const { data, error } = await supabaseClient.from("members")
-        .select("id, name, rank, role, active")
+        .select("id, name, rank, role, active, auth_user_id, motto, bio")
         .eq("auth_user_id", user.id)
         .eq("active", true)
         .maybeSingle();
@@ -918,10 +1261,13 @@
 
       setProfileMissing(false);
       hideProfileSetup();
+      currentMember = data;
       const displayName = data.name || authName;
       $("member-name").textContent = displayName;
-      $("member-avatar").textContent = displayName.trim().slice(0, 2) || "?";
+      $("member-avatar").textContent = getInitials(displayName);
       $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
+      updateProfileSummary();
+      updateSettingsProfile();
     }
 
     // =========================================================
