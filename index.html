@@ -152,16 +152,61 @@
     .brand h1 { margin: 0; font-size: 23px; }
     .brand p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
 
-    .user-info { text-align: right; color: var(--muted); font-size: 14px; }
-    .user-info strong { color: var(--text); }
+    .user-panel {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 7px 9px 7px 7px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(17, 24, 39, .72);
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #334155;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .user-details {
+      min-width: 120px;
+      text-align: left;
+    }
+
+    .user-name {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .user-rank {
+      display: inline-flex;
+      margin-top: 4px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #1e3a5f;
+      color: #bfdbfe;
+      font-size: 11px;
+      line-height: 1.35;
+    }
 
     .logout-button {
-      margin-top: 9px;
-      padding: 8px 13px;
+      margin: 0 0 0 3px;
+      padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 8px;
       background: #374151;
       color: var(--text);
+      white-space: nowrap;
     }
     .logout-button:hover:not(:disabled) { background: #475569; }
 
@@ -266,12 +311,13 @@
       .nav-menu { display: flex; gap: 4px; min-width: max-content; }
       .nav-button { width: auto; margin: 0; white-space: nowrap; }
       .content { padding: 20px 14px; }
-      .user-info { text-align: right; }
+      .user-panel { width: 100%; }
+      .user-details { flex: 1; }
     }
 
     @media (max-width: 520px) {
       .app-header { flex-direction: column; align-items: flex-start; }
-      .user-info { text-align: left; }
+      .user-panel { width: 100%; }
     }
   </style>
 </head>
@@ -357,9 +403,12 @@
           <h1>Brigade Verwaltung</h1>
           <p>Zentrale Verwaltung der Brigade</p>
         </div>
-        <div class="user-info">
-          <div>Angemeldet als: <strong id="member-name">-</strong></div>
-          <div id="member-rank">-</div>
+        <div class="user-panel">
+          <div id="member-avatar" class="user-avatar">?</div>
+          <div class="user-details">
+            <div id="member-name" class="user-name">Konto</div>
+            <div id="member-rank" class="user-rank">Wird geladen…</div>
+          </div>
           <button id="logout-button" class="logout-button" type="button">Abmelden</button>
         </div>
       </header>
@@ -849,10 +898,15 @@
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
       if (userError || !user) {
-        $("member-name").textContent = "Unbekannt";
-        $("member-rank").textContent = "Keine aktive Brigade-Zuordnung";
+        $("member-name").textContent = "Konto";
+        $("member-rank").textContent = "Nicht angemeldet";
+        $("member-avatar").textContent = "?";
         return;
       }
+
+      const authName = user.user_metadata?.name || user.email?.split("@")[0] || "Konto";
+      $("member-name").textContent = authName;
+      $("member-avatar").textContent = authName.trim().slice(0, 2) || "?";
 
       const { data, error } = await supabaseClient
         .from("members")
@@ -863,19 +917,18 @@
 
       if (error) {
         console.error("Mitglied konnte nicht geladen werden:", error);
-        $("member-name").textContent = user.user_metadata?.name || "Unbekannt";
-        $("member-rank").textContent = "Mitgliedsdaten konnten nicht geladen werden";
+        $("member-rank").textContent = "Brigade-Profil nicht verfügbar";
         return;
       }
 
       if (!data) {
-        $("member-name").textContent = user.user_metadata?.name || "Unbekannt";
-        $("member-rank").textContent = "Noch keiner Brigade zugeordnet";
+        $("member-rank").textContent = "Noch nicht zugeordnet";
         return;
       }
 
-      $("member-name").textContent = data.name || user.user_metadata?.name || "Unbekannt";
-      $("member-rank").textContent = `${data.rank || "-"} · ${data.role || "-"}`;
+      $("member-name").textContent = data.name || authName;
+      $("member-avatar").textContent = (data.name || authName).trim().slice(0, 2) || "?";
+      $("member-rank").textContent = `${data.rank || "Mitglied"}${data.role ? ` · ${data.role}` : ""}`;
     }
 
     // =========================================================
