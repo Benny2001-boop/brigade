@@ -1,35 +1,880 @@
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-    insert into public.members (
-        name,
-        rank,
-        role,
-        active,
-        auth_user_id
-    )
-    values (
-        coalesce(
-            new.raw_user_meta_data->>'name',
-            split_part(new.email, '@', 1)
-        ),
-        'Mitglied',
-        'Mitglied',
-        true,
-        new.id
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brigade Verwaltung</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #1f2937;
+            padding: 20px 30px;
+            border-bottom: 1px solid #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        header h1 { font-size: 24px; }
+        header p { color: #9ca3af; margin-top: 5px; }
+
+        .user-info {
+            text-align: right;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .user-info strong { color: #f3f4f6; }
+
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .section { margin-top: 30px; }
+        .section h2 { margin-bottom: 15px; }
+
+        button {
+            background: #374151;
+            color: #f3f4f6;
+            border: 1px solid #4b5563;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #4b5563; }
+
+        .login-container {
+            max-width: 420px;
+            margin: 100px auto;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        .login-card h1 { margin-bottom: 10px; }
+        .login-card p { color: #9ca3af; margin-bottom: 25px; }
+
+        .login-card label {
+            display: block;
+            margin-bottom: 7px;
+            color: #d1d5db;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+            border-radius: 6px;
+        }
+
+        .login-card button {
+            width: 100%;
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .login-card button:hover { background: #1d4ed8; }
+
+        .forgot-button {
+            width: 100%;
+            margin-top: 12px;
+            background: transparent !important;
+            border: none !important;
+            color: #93c5fd !important;
+            padding: 8px !important;
+        }
+
+        .forgot-button:hover {
+            background: transparent !important;
+            color: #bfdbfe !important;
+            text-decoration: underline;
+        }
+
+        .signup-button {
+            width: 100%;
+            margin-top: 4px;
+            background: transparent !important;
+            border: none !important;
+            color: #93c5fd !important;
+            padding: 8px !important;
+        }
+
+        .signup-button:hover {
+            background: transparent !important;
+            color: #bfdbfe !important;
+            text-decoration: underline;
+        }
+
+        .error { color: #f87171; margin-top: 15px; }
+        .success { color: #4ade80; margin-top: 15px; }
+
+        #app { display: none; }
+        #loading {
+            text-align: center;
+            margin-top: 100px;
+            color: #9ca3af;
+        }
+
+        .resource-list { margin-top: 10px; }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .resource-item:last-child { border-bottom: none; }
+        .orders-list { color: #9ca3af; }
+
+        @media (max-width: 700px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .user-info {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loading">Lade Brigade Verwaltung...</div>
+
+    <div id="login" class="login-container" style="display: none;">
+        <div class="login-card">
+            <h1>Brigade Verwaltung</h1>
+            <p>Bitte melde dich mit deinem Brigade-Konto an.</p>
+
+            <form id="login-form">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" required autocomplete="email">
+
+                <label for="password">Passwort</label>
+                <input type="password" id="password" required autocomplete="current-password">
+
+                <button type="submit">Anmelden</button>
+            </form>
+
+            <button type="button" id="forgot-password-button" class="forgot-button">
+                Passwort vergessen?
+            </button>
+
+            <button type="button" id="show-signup-button" class="signup-button">
+                Account erstellen
+            </button>
+
+            <div id="login-message"></div>
+        </div>
+    </div>
+
+    <!-- ACCOUNT ERSTELLEN -->
+    <div id="signup" class="login-container" style="display: none;">
+        <div class="login-card">
+            <h1>Account erstellen</h1>
+            <p>Erstelle dein persönliches Brigade-Konto.</p>
+
+            <form id="signup-form">
+                <label for="signup-name">Name</label>
+                <input type="text" id="signup-name" required autocomplete="name">
+
+                <label for="signup-email">E-Mail</label>
+                <input type="email" id="signup-email" required autocomplete="email">
+
+                <label for="signup-password">Passwort</label>
+                <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+
+                <label for="signup-confirm-password">Passwort wiederholen</label>
+                <input type="password" id="signup-confirm-password" required minlength="6" autocomplete="new-password">
+
+                <button type="submit">Account erstellen</button>
+            </form>
+
+            <button type="button" id="back-to-login-button" class="forgot-button">
+                Zurück zum Login
+            </button>
+
+            <div id="signup-message"></div>
+        </div>
+    </div>
+
+
+    <!-- PASSWORT ZURÜCKSETZEN -->
+    <div id="recovery" class="login-container" style="display: none;">
+        <div class="login-card">
+            <h1>Neues Passwort</h1>
+            <p>Lege hier dein neues Passwort für dein Brigade-Konto fest.</p>
+
+            <form id="recovery-form">
+                <label for="new-password">Neues Passwort</label>
+                <input
+                    type="password"
+                    id="new-password"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                >
+
+                <label for="confirm-password">Passwort wiederholen</label>
+                <input
+                    type="password"
+                    id="confirm-password"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                >
+
+                <button type="submit">Passwort ändern</button>
+            </form>
+
+            <div id="recovery-message"></div>
+        </div>
+    </div>
+
+    <div id="app">
+        <header>
+            <div>
+                <h1>Brigade Verwaltung</h1>
+                <p>Zentrale Verwaltung von Finanzen, Ressourcen und Aufträgen</p>
+            </div>
+
+            <div class="user-info">
+                <div>
+                    Angemeldet als:
+                    <strong id="member-name">-</strong>
+                </div>
+                <div id="member-rank">-</div>
+                <br>
+                <button id="logout-button">Abmelden</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="dashboard">
+                <div class="card">
+                    <h2>Brigadekasse</h2>
+                    <div class="value" id="balance">$0.00</div>
+                </div>
+
+                <div class="card">
+                    <h2>Ressourcen</h2>
+                    <div class="value" id="resource-count">0</div>
+                </div>
+
+                <div class="card">
+                    <h2>Offene Aufträge</h2>
+                    <div class="value" id="order-count">0</div>
+                </div>
+
+                <div class="card">
+                    <h2>Mitglieder</h2>
+                    <div class="value" id="member-count">0</div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Ressourcenbestand</h2>
+                <div class="card">
+                    <div id="resources-list" class="resource-list">
+                        Lade Ressourcen...
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Aufträge</h2>
+                <div class="card">
+                    <div id="orders-list" class="orders-list">
+                        Lade Aufträge...
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Willkommen</h2>
+                <div class="card">
+                    <p>Willkommen im Verwaltungssystem der Brigade.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+    // =====================================================
+    // SUPABASE
+    // =====================================================
+
+    const SUPABASE_URL = "https://gcdmmzchqcwshwiwqafa.supabase.co";
+
+    const SUPABASE_KEY = "sb_publishable_TjviimwkfAiJALkKUqJKZA_Zpyl7rQC";
+
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
     );
 
-    return new;
-end;
-$$;
 
-drop trigger if exists on_auth_user_created on auth.users;
+    // =====================================================
+    // ELEMENTE
+    // =====================================================
 
-create trigger on_auth_user_created
-after insert on auth.users
-for each row
-execute function public.handle_new_user();
+    const loadingElement = document.getElementById("loading");
+    const loginElement = document.getElementById("login");
+    const signupElement = document.getElementById("signup");
+    const appElement = document.getElementById("app");
+    const loginForm = document.getElementById("login-form");
+    const loginMessage = document.getElementById("login-message");
+    const logoutButton = document.getElementById("logout-button");
+    const forgotPasswordButton = document.getElementById("forgot-password-button");
+    const showSignupButton = document.getElementById("show-signup-button");
+    const signupForm = document.getElementById("signup-form");
+    const signupMessage = document.getElementById("signup-message");
+    const backToLoginButton = document.getElementById("back-to-login-button");
+    const recoveryElement = document.getElementById("recovery");
+    const recoveryForm = document.getElementById("recovery-form");
+    const recoveryMessage = document.getElementById("recovery-message");
+
+    // Beim Zurücksetzen des Passworts landet Supabase auf dieser Seite
+    // mit type=recovery im URL-Hash. In diesem Modus darf das Dashboard
+    // nicht gleichzeitig angezeigt werden.
+    let recoveryMode = false;
+    try {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        recoveryMode = hashParams.get("type") === "recovery";
+    } catch (e) {
+        recoveryMode = false;
+    }
+
+    function hideAllAuthScreens() {
+        loginElement.style.display = "none";
+        signupElement.style.display = "none";
+        recoveryElement.style.display = "none";
+        appElement.style.display = "none";
+    }
+
+    function showLogin() {
+        loadingElement.style.display = "none";
+        hideAllAuthScreens();
+        loginElement.style.display = "block";
+    }
+
+    function showSignup() {
+        loadingElement.style.display = "none";
+        hideAllAuthScreens();
+        signupElement.style.display = "block";
+        document.getElementById("signup-name").focus();
+    }
+
+    function showRecovery() {
+        loadingElement.style.display = "none";
+        hideAllAuthScreens();
+        recoveryElement.style.display = "block";
+    }
+
+    function showApp() {
+        loadingElement.style.display = "none";
+        hideAllAuthScreens();
+        appElement.style.display = "block";
+    }
+
+
+    // =====================================================
+    // PASSWORT VERGESSEN
+    // =====================================================
+
+    forgotPasswordButton.addEventListener("click", async function() {
+        const email = document.getElementById("email").value.trim();
+
+        if (!email) {
+            loginMessage.innerHTML =
+                '<div class="error">Bitte zuerst deine E-Mail-Adresse eingeben.</div>';
+            document.getElementById("email").focus();
+            return;
+        }
+
+        forgotPasswordButton.disabled = true;
+        loginMessage.innerHTML =
+            '<div>Passwort-Zurücksetzung wird angefordert...</div>';
+
+        const redirectTo = window.location.origin + window.location.pathname;
+
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo
+        });
+
+        forgotPasswordButton.disabled = false;
+
+        if (error) {
+            loginMessage.innerHTML =
+                `<div class="error">Fehler: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        loginMessage.innerHTML =
+            '<div class="success">Eine E-Mail zum Zurücksetzen des Passworts wurde angefordert. Prüfe deinen Posteingang.</div>';
+    });
+
+
+    // =====================================================
+    // ACCOUNT ERSTELLEN
+    // =====================================================
+
+    showSignupButton.addEventListener("click", function() {
+        signupMessage.innerHTML = "";
+        signupForm.reset();
+        showSignup();
+    });
+
+    backToLoginButton.addEventListener("click", function() {
+        signupMessage.innerHTML = "";
+        signupForm.reset();
+        showLogin();
+    });
+
+    signupForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+        signupMessage.innerHTML = "";
+
+        const name = document.getElementById("signup-name").value.trim();
+        const email = document.getElementById("signup-email").value.trim();
+        const password = document.getElementById("signup-password").value;
+        const confirmPassword = document.getElementById("signup-confirm-password").value;
+
+        if (password !== confirmPassword) {
+            signupMessage.innerHTML =
+                '<div class="error">Die Passwörter stimmen nicht überein.</div>';
+            return;
+        }
+
+        if (password.length < 6) {
+            signupMessage.innerHTML =
+                '<div class="error">Das Passwort muss mindestens 6 Zeichen lang sein.</div>';
+            return;
+        }
+
+        const submitButton = signupForm.querySelector("button[type=submit]");
+        submitButton.disabled = true;
+        signupMessage.innerHTML = '<div>Account wird erstellt...</div>';
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: window.location.origin + window.location.pathname,
+                data: { name }
+            }
+        });
+
+        submitButton.disabled = false;
+
+        if (error) {
+            signupMessage.innerHTML =
+                `<div class="error">Account konnte nicht erstellt werden: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        if (data.session) {
+            signupMessage.innerHTML =
+                '<div class="success">Account erstellt. Du wirst angemeldet...</div>';
+            setTimeout(() => checkSession(), 500);
+        } else {
+            signupMessage.innerHTML =
+                '<div class="success">Account erstellt. Falls eine Bestätigungs-E-Mail verlangt wird, bestätige sie zuerst. Danach kannst du dich anmelden.</div>';
+        }
+    });
+
+
+    // =====================================================
+    // PASSWORT ÄNDERN
+    // =====================================================
+
+    recoveryForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const newPassword = document.getElementById("new-password").value;
+        const confirmPassword = document.getElementById("confirm-password").value;
+
+        if (newPassword !== confirmPassword) {
+            recoveryMessage.innerHTML =
+                '<div class="error">Die Passwörter stimmen nicht überein.</div>';
+            return;
+        }
+
+        const { error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) {
+            recoveryMessage.innerHTML =
+                `<div class="error">Passwort konnte nicht geändert werden: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        recoveryMessage.innerHTML =
+            '<div class="success">Passwort erfolgreich geändert. Du kannst dich jetzt anmelden.</div>';
+
+        setTimeout(async function() {
+            await supabaseClient.auth.signOut();
+            recoveryMode = false;
+            window.history.replaceState({}, document.title, window.location.pathname);
+            recoveryForm.reset();
+            showLogin();
+            loginMessage.innerHTML =
+                '<div class="success">Dein Passwort wurde geändert. Bitte melde dich an.</div>';
+        }, 1200);
+    });
+
+
+    // =====================================================
+    // LOGIN
+    // =====================================================
+
+    loginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        loginMessage.innerHTML = "";
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            loginMessage.innerHTML =
+                `<div class="error">Anmeldung fehlgeschlagen: ${escapeHtml(error.message)}</div>`;
+            return;
+        }
+
+        await checkSession();
+    });
+
+
+    // =====================================================
+    // LOGOUT
+    // =====================================================
+
+    logoutButton.addEventListener("click", async function() {
+        await supabaseClient.auth.signOut();
+        recoveryMode = false;
+        showLogin();
+    });
+
+
+    // =====================================================
+    // SESSION
+    // =====================================================
+
+    async function checkSession() {
+        const {
+            data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        // Während eines Passwort-Recovery-Links nicht ins Dashboard wechseln.
+        if (recoveryMode) {
+            showRecovery();
+            return;
+        }
+
+        if (!session) {
+            showLogin();
+            return;
+        }
+
+        showApp();
+
+        await loadMember();
+        await loadFinances();
+        await loadResources();
+        await loadOrders();
+        await loadMemberCount();
+    }
+
+
+    // =====================================================
+    // MITGLIED
+    // =====================================================
+
+    async function loadMember() {
+        const {
+            data: { user }
+        } = await supabaseClient.auth.getUser();
+
+        if (!user) return;
+
+        const { data, error } = await supabaseClient
+            .from("members")
+            .select("name, rank, role")
+            .eq("auth_user_id", user.id)
+            .eq("active", true)
+            .single();
+
+        if (error) {
+            console.error("Mitglied konnte nicht geladen werden:", error);
+
+            document.getElementById("member-name").textContent = "Unbekannt";
+            document.getElementById("member-rank").textContent =
+                "Keine aktive Brigade-Zuordnung";
+
+            return;
+        }
+
+        document.getElementById("member-name").textContent =
+            data.name || "Unbekannt";
+
+        document.getElementById("member-rank").textContent =
+            `${data.rank || "-"} · ${data.role || "-"}`;
+    }
+
+
+    // =====================================================
+    // FINANZEN
+    // =====================================================
+
+    async function loadFinances() {
+        const { data, error } = await supabaseClient
+            .from("brigade_finances")
+            .select("balance, currency")
+            .eq("id", 1)
+            .single();
+
+        if (error) {
+            console.error("Finanzen konnten nicht geladen werden:", error);
+            document.getElementById("balance").textContent = "Fehler";
+            return;
+        }
+
+        const balance = Number(data.balance || 0);
+
+        document.getElementById("balance").textContent =
+            new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: data.currency || "USD"
+            }).format(balance);
+    }
+
+
+    // =====================================================
+    // RESSOURCEN
+    // =====================================================
+
+    async function loadResources() {
+        const { data, error } = await supabaseClient
+            .from("resources")
+            .select("name, quantity, unit")
+            .eq("active", true)
+            .order("id");
+
+        if (error) {
+            console.error("Ressourcen konnten nicht geladen werden:", error);
+
+            document.getElementById("resources-list").textContent =
+                "Ressourcen konnten nicht geladen werden.";
+
+            return;
+        }
+
+        document.getElementById("resource-count").textContent = data.length;
+
+        const list = document.getElementById("resources-list");
+
+        if (data.length === 0) {
+            list.textContent = "Keine Ressourcen vorhanden.";
+            return;
+        }
+
+        list.innerHTML = data.map(resource => {
+            const unit = resource.unit
+                ? ` ${escapeHtml(resource.unit)}`
+                : "";
+
+            return `
+                <div class="resource-item">
+                    <span>${escapeHtml(resource.name)}</span>
+                    <strong>${Number(resource.quantity || 0)}${unit}</strong>
+                </div>
+            `;
+        }).join("");
+    }
+
+
+    // =====================================================
+    // AUFTRÄGE
+    // =====================================================
+
+    async function loadOrders() {
+        const { data, error } = await supabaseClient
+            .from("orders")
+            .select(`
+                id,
+                menge,
+                status,
+                created_at,
+                weapons (
+                    name
+                )
+            `)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Aufträge konnten nicht geladen werden:", error);
+
+            document.getElementById("orders-list").textContent =
+                "Aufträge konnten nicht geladen werden.";
+
+            return;
+        }
+
+        const openOrders = data.filter(order =>
+            !["Fertig", "Ausgeliefert", "Abgebrochen"].includes(order.status)
+        );
+
+        document.getElementById("order-count").textContent =
+            openOrders.length;
+
+        const list = document.getElementById("orders-list");
+
+        if (data.length === 0) {
+            list.textContent = "Keine Aufträge vorhanden.";
+            return;
+        }
+
+        list.innerHTML = data.map(order => {
+            const weaponName = order.weapons?.name || "Unbekannt";
+
+            return `
+                <div class="resource-item">
+                    <span>
+                        #${order.id} – ${escapeHtml(weaponName)} × ${order.menge}
+                    </span>
+                    <strong>${escapeHtml(order.status)}</strong>
+                </div>
+            `;
+        }).join("");
+    }
+
+
+    // =====================================================
+    // MITGLIEDER
+    // =====================================================
+
+    async function loadMemberCount() {
+        // Normale Mitglieder dürfen laut RLS nur ihren eigenen Datensatz sehen.
+        // Deshalb zeigen wir hier zunächst eine sichere eigene Mitgliedsanzeige.
+        const { data, error } = await supabaseClient
+            .from("members")
+            .select("id")
+            .eq("active", true);
+
+        if (error) {
+            console.error("Mitglieder konnten nicht geladen werden:", error);
+            document.getElementById("member-count").textContent = "-";
+            return;
+        }
+
+        document.getElementById("member-count").textContent =
+            data.length;
+    }
+
+
+    // =====================================================
+    // HTML ESCAPING
+    // =====================================================
+
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return "";
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    // =====================================================
+    // AUTH EVENTS
+    // =====================================================
+
+    supabaseClient.auth.onAuthStateChange(async function(event, session) {
+        if (event === "PASSWORD_RECOVERY") {
+            recoveryMode = true;
+            showRecovery();
+            return;
+        }
+
+        if (event === "SIGNED_OUT") {
+            recoveryMode = false;
+            showLogin();
+            return;
+        }
+
+        if (event === "SIGNED_IN" && session) {
+            await checkSession();
+        }
+    });
+
+
+    // =====================================================
+    // START
+    // =====================================================
+
+    checkSession();
+</script>
+
+</body>
+</html>
