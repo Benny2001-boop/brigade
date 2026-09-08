@@ -178,9 +178,35 @@
     .value { font-size:29px; font-weight:760; letter-spacing:-.025em; }
     .section { margin-top:30px; }
     .section h3 { margin:0 0 13px; font-family:Georgia,"Times New Roman",serif; font-size:18px; font-weight:600; }
-    .resource-list,.orders-list { margin-top:0; }
-    .resource-item { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:12px 0; border-bottom:1px solid var(--border-soft); }
-    .resource-item:first-child { padding-top:0; } .resource-item:last-child { border-bottom:0; padding-bottom:0; }
+    .resource-list {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin-top:0;
+    }
+    .resource-row {
+      position:relative; display:flex; align-items:center; justify-content:space-between; gap:16px;
+      min-height:72px; padding:14px 15px; border:1px solid #292c32; border-radius:10px;
+      background:linear-gradient(145deg,rgba(27,29,34,.82),rgba(17,19,22,.82));
+      transition:transform .18s,border-color .18s,background .18s;
+    }
+    .resource-row:hover { transform:translateY(-1px); border-color:#3b3f47; background:linear-gradient(145deg,rgba(31,33,38,.9),rgba(19,21,24,.9)); }
+    .resource-row::before {
+      content:""; position:absolute; left:0; top:13px; bottom:13px; width:2px;
+      background:var(--accent); border-radius:0 2px 2px 0; opacity:.65;
+    }
+    .resource-row-main { min-width:0; display:flex; align-items:center; gap:11px; }
+    .resource-row-icon {
+      width:34px; height:34px; flex:0 0 34px; display:grid; place-items:center;
+      border:1px solid #343840; border-radius:8px; background:#121419; color:#b99a61; font-size:15px;
+    }
+    .resource-row-info { min-width:0; }
+    .resource-row-info strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+    .resource-row-info span { display:block; margin-top:3px; color:var(--muted-2); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+    .resource-row-stock { flex:0 0 auto; text-align:right; }
+    .resource-row-stock strong { display:block; font-size:18px; line-height:1; letter-spacing:-.02em; }
+    .resource-row-stock small { display:block; margin-top:5px; color:var(--muted-2); font-size:10px; }
+    .resource-row.low .resource-row-stock strong { color:#d2a45d; }
+    .resource-row.empty .resource-row-stock strong { color:#c76876; }
+    .resource-list-empty { grid-column:1 / -1; }
+    @media (max-width:700px) { .resource-list { grid-template-columns:1fr; } }
     .status { color:#c9c8c4; font-weight:600; text-align:right; }
     .page-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:15px; }
     .placeholder-card { min-height:180px; }
@@ -876,7 +902,18 @@
     if($("resource-count")) $("resource-count").textContent = cache.resources.filter(r=>r.active !== false).length;
     if($("finance-page-balance")) $("finance-page-balance").textContent = money(cache.financeBalance,cache.currency);
     const resources = cache.resources.filter(r=>r.active !== false);
-    if($("resources-list")) $("resources-list").innerHTML = resources.length ? resources.slice(0,8).map(r=>`<div class="resource-row"><div><strong>${esc(r.name)}</strong><span>${esc(r.unit||"")}</span></div><strong>${Number(r.quantity||0).toLocaleString("de-DE")}</strong></div>`).join("") : empty("Keine Ressourcen","Noch keine Ressourcen angelegt.");
+    if($("resources-list")) $("resources-list").innerHTML = resources.length ? resources.slice(0,8).map(r=>{
+      const qty=Number(r.quantity||0);
+      const state=qty<=0?"empty":qty<10?"low":"";
+      const stateText=qty<=0?"Bestand leer":qty<10?"Bestand niedrig":"Bestand verfügbar";
+      return `<div class="resource-row ${state}">
+        <div class="resource-row-main">
+          <div class="resource-row-icon">◈</div>
+          <div class="resource-row-info"><strong>${esc(r.name)}</strong><span>${esc(r.unit||"Einheit")}</span></div>
+        </div>
+        <div class="resource-row-stock"><strong>${qty.toLocaleString("de-DE")}</strong><small>${stateText}</small></div>
+      </div>`;
+    }).join("") : `<div class="resource-list-empty">${empty("Keine Ressourcen","Noch keine Ressourcen angelegt.")}</div>`;
     const orders = cache.orders.filter(o=>!["Fertig","Ausgeliefert","Abgebrochen"].includes(o.status)).slice(0,8);
     if($("orders-list")) $("orders-list").innerHTML = orders.length ? orders.map(o=>`<div class="order-row"><div><strong>#ORD-${String(o.id).padStart(6,"0")}</strong><span>${esc(weaponName(o.weapon))} × ${Number(o.menge||0)}</span></div>${statusBadge(o.status)}</div>`).join("") : empty("Keine offenen Aufträge","Aktuell sind keine offenen Aufträge vorhanden.");
     renderActivity();
