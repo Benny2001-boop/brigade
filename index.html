@@ -236,6 +236,9 @@
     .eyebrow { color:#827b6e; text-transform:uppercase; letter-spacing:.16em; font-size:9px; margin-bottom:3px; }
     .profile-summary-main h3 { margin:0; font-family:Georgia,serif; font-size:21px; }
     .profile-summary-rank { margin-top:5px; color:#bda99b; font-size:11px; }
+    .rank-reference { display:grid; gap:6px; }
+    .rank-reference .inline-stat { padding:8px 0; border-bottom:1px solid var(--border); }
+    .rank-reference .inline-stat:last-child { border-bottom:0; }
     .profile-summary-motto { margin-top:16px; color:#d3bd91; font-family:Georgia,serif; font-style:italic; }
     .profile-summary-bio { margin:7px 0 0; color:var(--muted); line-height:1.55; font-size:13px; }
     @media (max-width:520px) {
@@ -617,7 +620,7 @@
 <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Deine Rolle</div><div class="kpi-number" id="admin-role" style="font-size:20px">–</div><div class="kpi-sub">Berechtigungsstufe</div></div><div class="card kpi-card"><div class="kpi-label">System</div><div class="kpi-number"><span class="badge success">Online</span></div><div class="kpi-sub">Supabase-Verbindung</div></div><div class="card kpi-card"><div class="kpi-label">Brigadezeit</div><div class="kpi-number" id="brigade-clock" style="font-size:20px">–</div><div class="kpi-sub">Lokale Browserzeit</div></div></div>
 <div class="three-grid"><div class="card"><div class="card-header"><h3>Verwaltungsaktionen</h3></div><button class="ghost-button" id="admin-member-refresh" type="button">Mitglieder neu laden</button><button class="ghost-button" id="admin-system-refresh" style="margin-top:8px" type="button">Dashboard aktualisieren</button></div><div class="card"><div class="card-header"><h3>Brigade-Chronik</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Die Chronik fasst die sichtbaren Aktivitäten aus Aufträgen, Finanzen und Ressourcen zusammen.</p><div id="chronicle-summary"></div></div><div class="card"><div class="card-header"><h3>Persönliche Einstellungen</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Farbschema, Profil und Schnellzugriff findest du über das ⚙-Menü oben rechts.</p><button class="ghost-button" id="admin-open-settings" type="button">⚙ Einstellungen öffnen</button></div></div>
 <div class="card" style="margin-top:15px"><div class="card-header"><h3>Stammdaten direkt in der Verwaltung</h3><span class="badge info">Keine SQL-Eingabe nötig</span></div><p class="muted" style="font-size:11px;line-height:1.55;margin-bottom:13px">Neue Mitglieder, Ressourcen, Artikel und Produktionsstandorte können direkt über die Oberfläche angelegt werden. Die Einträge werden anschließend automatisch in Supabase gespeichert.</p><div class="form-actions" style="flex-wrap:wrap"><button class="small-button" id="admin-new-member" type="button">＋ Mitglied</button><button class="small-button" id="admin-new-resource" type="button">＋ Ressource</button><button class="small-button" id="admin-new-weapon" type="button">＋ Artikel</button><button class="small-button" id="admin-new-location" type="button">＋ Produktionsstandort</button></div></div>
-<div class="card" style="margin-top:15px"><div class="card-header"><h3>Mitglieder &amp; Rollen</h3><span class="badge warning">RLS entscheidet final</span></div><div class="table-wrap" id="admin-members-list"></div></div>
+<div class="card" style="margin-top:15px"><div class="card-header"><h3>Mitglieder &amp; Rollen</h3><span class="badge warning">RLS entscheidet final</span></div><div class="table-wrap" id="admin-members-list"></div></div><div class="card" style="margin-top:15px"><div class="card-header"><h3>Rangordnung</h3><span class="badge info">12 → 1</span></div><div class="rank-reference" id="rank-reference"></div></div>
 </section>
 </main>
 </div>
@@ -697,11 +700,35 @@
   function memberName(id) { return cache.members.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
   function weaponName(id) { return cache.weapons.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
   function resourceName(id) { return cache.resources.find(x => Number(x.id) === Number(id))?.name || "Unbekannt"; }
-  function canManage() {
-    const r = `${currentMember?.rank || ""} ${currentMember?.role || ""}`.toLowerCase();
-    return ["zar","zakon","stellvertreter","leiter","admin","administrator"].some(x => r.includes(x));
+  const BRIGADE_RANKS = [
+    {level:12, name:"Zar", icon:"👑", function:"Oberhaupt"},
+    {level:11, name:"Zakon", icon:"⚖️", function:"Rechte Hand / Hüter der Bruderschaft"},
+    {level:10, name:"Vor", icon:"", function:"Führungsmitglied, hoher Bruder"},
+    {level:9, name:"Krestny", icon:"", function:"Vertrauensperson der Führung"},
+    {level:8, name:"Ataman", icon:"", function:"Führt eine Gruppe/Abteilung"},
+    {level:7, name:"Starshiy", icon:"", function:"Erfahrener älterer Bruder"},
+    {level:6, name:"Brat", icon:"", function:"Vollwertiges Mitglied"},
+    {level:5, name:"Boyets", icon:"", function:"Kämpfer der Brigade"},
+    {level:4, name:"Molodoy", icon:"", function:"Jüngeres Mitglied"},
+    {level:3, name:"Uchenik", icon:"", function:"Schüler / in Ausbildung"},
+    {level:2, name:"Kandidat", icon:"", function:"Anwärter"},
+    {level:1, name:"Novik", icon:"", function:"Neuling"}
+  ];
+  function rankInfo(value) {
+    const raw=String(value||"").trim().toLowerCase();
+    return BRIGADE_RANKS.find(r=>r.name.toLowerCase()===raw)||null;
   }
-  function canCreateOrders() { return canManage() || String(currentMember?.rank || "").toLowerCase().includes("zakon"); }
+  function rankLevel(value) { return rankInfo(value)?.level || 0; }
+  function rankDisplay(value) { const r=rankInfo(value); return r ? `${r.icon ? r.icon+" " : ""}${r.name}` : String(value||"Novik"); }
+  function rankOptions(selected="") {
+    return BRIGADE_RANKS.map(r=>`<option value="${esc(r.name)}" ${r.name.toLowerCase()===String(selected||"").trim().toLowerCase()?"selected":""}>${r.icon?r.icon+" ":""}${esc(r.name)} · Rang ${r.level}</option>`).join("");
+  }
+  function canManage() {
+    const rank=rankLevel(currentMember?.rank);
+    const role=String(currentMember?.role||"").trim().toLowerCase();
+    return rank>=8 || role==="admin" || role==="administrator";
+  }
+  function canCreateOrders() { return rankLevel(currentMember?.rank)>=11; }
 
   function showOnly(id) {
     ["loading","login","signup","recovery","app"].forEach(x => $(x)?.classList.add("hidden"));
@@ -758,7 +785,7 @@
 
   function updateHeader() {
     const name = currentMember?.name || currentUser?.user_metadata?.name || currentUser?.email?.split("@")[0] || "Konto";
-    const rank = currentMember ? `${currentMember.rank || "Mitglied"}${currentMember.role ? ` · ${currentMember.role}` : ""}` : "Profil fehlt";
+    const rank = currentMember ? `${rankDisplay(currentMember.rank)}${currentMember.role ? ` · ${currentMember.role}` : ""}` : "Profil fehlt";
     ["member-name","settings-profile-name"].forEach(id => { if ($(id)) $(id).textContent = name; });
     ["member-rank","settings-profile-rank"].forEach(id => { if ($(id)) $(id).textContent = rank; });
     ["member-avatar","settings-avatar"].forEach(id => { if ($(id)) $(id).textContent = initials(name); });
@@ -770,12 +797,12 @@
     const motto = currentMember.motto || "Kein persönliches Motto hinterlegt.";
     const bio = currentMember.bio || "Noch keine persönliche Beschreibung hinterlegt.";
     ["profile-summary-name"].forEach(id => { if ($(id)) $(id).textContent = currentMember.name || "Mitglied"; });
-    if ($("profile-summary-rank")) $("profile-summary-rank").textContent = `${currentMember.rank || "Mitglied"} · ${currentMember.role || "Mitglied"}`;
+    if ($("profile-summary-rank")) $("profile-summary-rank").textContent = `${rankDisplay(currentMember.rank)}${currentMember.role ? ` · ${currentMember.role}` : ""}`;
     if ($("profile-summary-motto")) $("profile-summary-motto").textContent = motto;
     if ($("profile-summary-bio")) $("profile-summary-bio").textContent = bio;
     if ($("profile-summary-avatar")) $("profile-summary-avatar").textContent = initials(currentMember.name);
     if ($("profile-preview-name")) $("profile-preview-name").textContent = currentMember.name || "Mitglied";
-    if ($("profile-preview-rank")) $("profile-preview-rank").textContent = `${currentMember.rank || "Mitglied"} · ${currentMember.role || "Mitglied"}`;
+    if ($("profile-preview-rank")) $("profile-preview-rank").textContent = `${rankDisplay(currentMember.rank)}${currentMember.role ? ` · ${currentMember.role}` : ""}`;
     if ($("profile-edit-avatar")) $("profile-edit-avatar").textContent = initials(currentMember.name);
     if ($("edit-profile-name")) $("edit-profile-name").value = currentMember.name || "";
     if ($("edit-profile-motto")) $("edit-profile-motto").value = currentMember.motto || "";
@@ -921,10 +948,13 @@
     const alerts=[]; cache.resources.filter(r=>r.active!==false&&Number(r.quantity||0)<=0).forEach(r=>alerts.push({type:"danger",title:`Ressource erschöpft: ${r.name}`,text:"Bestand prüfen und ggf. Nachschub buchen."})); cache.orders.filter(o=>o.status==="Neu").slice(0,5).forEach(o=>alerts.push({type:"warning",title:`Neuer Auftrag #${o.id}`,text:`${weaponName(o.weapon)} wartet auf Bearbeitung.`}));
     if($("notification-count")) $("notification-count").textContent=alerts.length; if($("notification-list")) $("notification-list").innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item ${a.type}"><strong>${esc(a.title)}</strong><span>${esc(a.text)}</span></div>`).join(""):empty("Alles ruhig","Aktuell keine automatischen Hinweise.");
   }
-  function renderAdmin() { if($("chronicle-summary")) $("chronicle-summary").innerHTML=`<div class="inline-stat"><span>Mitglieder</span><strong>${cache.members.length}</strong></div><div class="inline-stat"><span>Aufträge</span><strong>${cache.orders.length}</strong></div><div class="inline-stat"><span>Produktionsjobs</span><strong>${cache.jobs.length}</strong></div><div class="inline-stat"><span>Artikel</span><strong>${cache.weapons.length}</strong></div>`; }
+  function renderAdmin() {
+    if($("chronicle-summary")) $("chronicle-summary").innerHTML=`<div class="inline-stat"><span>Mitglieder</span><strong>${cache.members.length}</strong></div><div class="inline-stat"><span>Aufträge</span><strong>${cache.orders.length}</strong></div><div class="inline-stat"><span>Produktionsjobs</span><strong>${cache.jobs.length}</strong></div><div class="inline-stat"><span>Artikel</span><strong>${cache.weapons.length}</strong></div>`;
+    if($("rank-reference")) $("rank-reference").innerHTML=BRIGADE_RANKS.map(r=>`<div class="inline-stat"><span>${r.icon?r.icon+" ":""}<strong>${esc(r.name)}</strong> · Rang ${r.level}</span><strong>${esc(r.function)}</strong></div>`).join("");
+  }
 
-  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; openDetail(m.name||"Mitglied",`${m.rank||"Mitglied"} · ${m.role||"Mitglied"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button></div>`:""}`); }
-  function editMember(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error"); openAction("Mitglied bearbeiten","Rang, Rolle und Status",`<div class="form-grid"><div><label>Rang</label><input id="f-rank" value="${esc(m.rank||"")}" required></div><div><label>Rolle</label><input id="f-role" value="${esc(m.role||"")}" required></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),`Speichern fehlgeschlagen: ${errorText(error)}`,"error");closeAction();closeDetail();await fetchAll();toast("Mitglied aktualisiert.");}); }
+  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; openDetail(m.name||"Mitglied",`${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button></div>`:""}`); }
+  function editMember(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error"); openAction("Mitglied bearbeiten","Rang, Rolle und Status",`<div class="form-grid"><div><label>Rang</label><select id="f-rank" class="select-input" required>${rankOptions(m.rank||"Novik")}</select></div><div><label>Rolle / Zusatzfunktion</label><input id="f-role" value="${esc(m.role||"")}" placeholder="z. B. Stellvertreter"></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),`Speichern fehlgeschlagen: ${errorText(error)}`,"error");closeAction();closeDetail();await fetchAll();toast("Mitglied aktualisiert.");}); }
 
   function createFinance() {
     if(!canManage())return toast("Keine Berechtigung für Finanzbuchungen.","error");
@@ -959,13 +989,20 @@
 
   function createMember() {
     if(!canManage()) return toast("Keine Berechtigung zum Anlegen von Mitgliedern.","error");
-    openAction("Mitglied anlegen","Neues Brigade-Mitglied direkt über die Oberfläche erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-m-name" maxlength="100" required placeholder="z. B. Ivan Petrov"></div><div><label>Rang</label><input id="f-m-rank" maxlength="60" value="Mitglied" required></div><div><label>Rolle</label><input id="f-m-role" maxlength="80" value="Mitglied" required></div><div class="full"><label>Status</label><select id="f-m-active" class="select-input"><option value="true" selected>Aktiv</option><option value="false">Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Mitglied speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
+    openAction("Mitglied anlegen","Neues Brigade-Mitglied direkt über die Oberfläche erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-m-name" maxlength="100" required placeholder="z. B. Ivan Petrov"></div><div><label>Rang</label><select id="f-m-rank" class="select-input" required>${rankOptions("Novik")}</select></div><div><label>Rolle / Zusatzfunktion</label><input id="f-m-role" maxlength="80" placeholder="z. B. Stellvertreter"></div><div class="full"><div class="muted" id="f-m-rank-info" style="font-size:11px"></div></div><div class="full"><label>Status</label><select id="f-m-active" class="select-input"><option value="true" selected>Aktiv</option><option value="false">Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Mitglied speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
       e.preventDefault();
       const payload={name:$('f-m-name').value.trim(),rank:$('f-m-rank').value.trim()||"Mitglied",role:$('f-m-role').value.trim()||"Mitglied",active:$('f-m-active').value==="true"};
       const {error}=await supabaseClient.from("members").insert(payload);
       if(error)return setMessage($('action-message'),`Mitglied konnte nicht angelegt werden: ${errorText(error)}`,"error");
       closeAction(); await fetchAll(); toast("Mitglied angelegt.");
     });
+  }
+
+  function updateRankInfo() {
+    const select=$("f-m-rank"), info=$("f-m-rank-info");
+    if(!select||!info) return;
+    const r=rankInfo(select.value);
+    info.textContent=r ? `Rang ${r.level} · ${r.function}` : "";
   }
 
   function createResource() {
@@ -1036,7 +1073,7 @@
         return;
       }
       openAction("Bestand ändern","Wähle die Ressource aus, deren Bestand geändert werden soll.",`<div><label>Ressource</label><select id="f-resource-pick" class="select-input" required>${activeResources.map(r=>`<option value="${Number(r.id)}">${esc(r.name)} · ${Number(r.quantity||0)} ${esc(r.unit||"")}</option>`).join("")}</select></div><div class="form-actions"><button class="primary-button" type="submit">Weiter</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,e=>{e.preventDefault();const id=$("f-resource-pick")?.value;if(!id)return;closeAction();changeResource(id);});
-    }); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("admin-new-member")?.addEventListener("click",createMember); $("admin-new-resource")?.addEventListener("click",createResource); $("admin-new-weapon")?.addEventListener("click",createWeapon); $("admin-new-location")?.addEventListener("click",createLocation); $("chronicle-print")?.addEventListener("click",()=>window.print());
+    }); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("admin-new-member")?.addEventListener("click",createMember); $("action-modal")?.addEventListener("change",e=>{if(e.target?.id==="f-m-rank")updateRankInfo();}); $("admin-new-resource")?.addEventListener("click",createResource); $("admin-new-weapon")?.addEventListener("click",createWeapon); $("admin-new-location")?.addEventListener("click",createLocation); $("chronicle-print")?.addEventListener("click",()=>window.print());
     $("action-modal-close")?.addEventListener("click",closeAction); $("detail-close")?.addEventListener("click",closeDetail); $("action-modal")?.addEventListener("click",e=>{if(e.target===$("action-modal"))closeAction()}); $("detail-modal")?.addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
     document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
     document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("open-search-button")?.click();}if(e.key==="Escape"){closeSettings();$("global-search")?.classList.add("hidden");}});
