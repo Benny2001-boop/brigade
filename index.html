@@ -458,7 +458,7 @@
 <div class="profile-setup-card">
 <h2 id="profile-setup-title">Brigade-Profil erstellen</h2>
 <p>Dein Login funktioniert bereits. Jetzt fehlt nur noch dein persönliches Brigade-Profil.</p>
-<div class="profile-note">Beim Erstellen wird zunächst der Rang <strong>Mitglied</strong> und die Rolle <strong>Mitglied</strong> gesetzt. Rang und Rolle können später über die Verwaltung geändert werden.</div>
+<div class="profile-note">Beim Erstellen wird zunächst der Rang <strong>Novik</strong> und die Rolle <strong>Mitglied</strong> gesetzt. Rang und Rolle können später über die Verwaltung geändert werden.</div>
 <form id="profile-setup-form" novalidate="">
 <label for="profile-name">Brigade-Name</label>
 <input autocomplete="name" id="profile-name" maxlength="100" placeholder="z. B. Uranov Kimsky" required="" type="text"/>
@@ -815,7 +815,7 @@
     const name = $("profile-name").value.trim();
     if (!name) return setMessage($("profile-setup-message"), "Bitte einen Namen eingeben.", "error");
     const btn = $("profile-setup-button"); btn.disabled = true;
-    const {data, error} = await supabaseClient.from("members").insert({name,rank:"Mitglied",role:"Mitglied",active:true,auth_user_id:currentUser.id}).select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").single();
+    const {data, error} = await supabaseClient.from("members").insert({name,rank:"Novik",role:"Mitglied",active:true,auth_user_id:currentUser.id}).select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").single();
     btn.disabled = false;
     if (error) return setMessage($("profile-setup-message"), `Profil konnte nicht erstellt werden: ${errorText(error)}`, "error");
     currentMember = data; $("profile-setup-overlay").classList.add("hidden"); updateHeader(); updateProfileViews(); await fetchAll(); toast("Brigade-Profil erstellt.");
