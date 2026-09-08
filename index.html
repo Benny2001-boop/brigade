@@ -208,6 +208,19 @@
     .resource-list-empty { grid-column:1 / -1; }
     @media (max-width:700px) { .resource-list { grid-template-columns:1fr; } }
     .status { color:#c9c8c4; font-weight:600; text-align:right; }
+    .online-panel { margin-top:30px; }
+    .online-panel-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:13px; }
+    .online-panel-header h3 { margin:0; font-family:Georgia,"Times New Roman",serif; font-size:18px; font-weight:600; }
+    .online-count { display:inline-flex; align-items:center; gap:7px; color:#c9c8c4; font-size:11px; }
+    .online-count::before { content:""; width:7px; height:7px; border-radius:50%; background:#55b875; box-shadow:0 0 9px rgba(85,184,117,.55); }
+    .online-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+    .online-member { display:flex; align-items:center; gap:11px; min-width:0; padding:12px 13px; border:1px solid #292c32; border-radius:10px; background:linear-gradient(145deg,rgba(27,29,34,.82),rgba(17,19,22,.82)); }
+    .online-avatar { width:34px; height:34px; flex:0 0 34px; display:grid; place-items:center; border-radius:50%; border:1px solid #3a3e46; background:#17191e; color:#d5c3a2; font-size:11px; font-weight:700; }
+    .online-member-info { min-width:0; flex:1; }
+    .online-member-info strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+    .online-member-info span { display:block; margin-top:3px; color:var(--muted-2); font-size:10px; }
+    .online-dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#55b875; box-shadow:0 0 8px rgba(85,184,117,.5); }
+    .online-empty { color:var(--muted); font-size:13px; padding:5px 0; }
     .page-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:15px; }
     .placeholder-card { min-height:180px; }
     .placeholder-card h3 { margin-top:0; font-family:Georgia,"Times New Roman",serif; }
@@ -579,6 +592,10 @@
 <h3>Ressourcenbestand</h3>
 <div class="card"><div class="resource-list" id="resources-list">Lade Ressourcen...</div></div>
 </section>
+<section class="section online-panel">
+<div class="online-panel-header"><h3>Jetzt online</h3><span class="online-count" id="online-count">0 online</span></div>
+<div class="card"><div class="online-list" id="online-list"><div class="online-empty">Online-Status wird geladen…</div></div></div>
+</section>
 <section class="section">
 <h3>Aktuelle Aufträge</h3>
 <div class="card"><div class="orders-list" id="orders-list">Lade Aufträge...</div></div>
@@ -603,6 +620,7 @@
 <section class="page" data-page-content="members">
 <div class="page-header"><h2>Mitglieder</h2><p>Personalakten, Rollen, Status und Brigade-Zugehörigkeit.</p></div>
 <div class="toolbar"><input class="search" id="member-search" placeholder="Mitglieder durchsuchen…" type="search"/><button class="small-button" id="member-refresh" type="button">↻ Aktualisieren</button></div>
+<div class="card online-panel" style="margin-top:15px;"><div class="online-panel-header"><h3>Brigade online</h3><span class="online-count" id="online-count-members">0 online</span></div><div class="online-list" id="online-list-members"><div class="online-empty">Online-Status wird geladen…</div></div></div>
 <div class="card"><div class="table-wrap" id="members-page-list"></div></div>
 </section>
 <section class="page" data-page-content="finances">
@@ -681,6 +699,8 @@
   let supabaseClient = null;
   let currentUser = null;
   let currentMember = null;
+  let onlineChannel = null;
+  let onlineMembers = new Map();
   let cache = {members:[], finances:[], resources:[], orders:[], weapons:[], recipes:[], locations:[], jobs:[], financeBalance:0, currency:"USD"};
   let recoveryMode = false;
   let refreshTimer = null;
@@ -755,6 +775,14 @@
     return rank>=8 || role==="admin" || role==="administrator";
   }
   function canCreateOrders() { return rankLevel(currentMember?.rank)>=11; }
+  function canDeleteMember(targetId) {
+    const actorRank = rankLevel(currentMember?.rank);
+    const targetIdNum = Number(targetId);
+    const selfId = Number(currentMember?.id);
+    // Nur Zar (12), Zakon (11), Vor (10) und Krestny (9) dürfen Mitglieder löschen.
+    // Das eigene Mitglied darf niemals gelöscht werden.
+    return actorRank >= 9 && actorRank <= 12 && targetIdNum !== selfId;
+  }
 
   function showOnly(id) {
     ["loading","login","signup","recovery","app"].forEach(x => $(x)?.classList.add("hidden"));
@@ -875,7 +903,7 @@
   async function fetchAll() {
     if (!currentUser) return;
     const results = await Promise.all([
-      supabaseClient.from("members").select("id,name,rank,role,active,auth_user_id,motto,bio,created_at").order("id"),
+      supabaseClient.from("members").select("id,name,rank,role,active,motto,bio,created_at").order("id"),
       supabaseClient.from("financial_transactions").select("id,created_at,amount,transaction_type,category,beschreibung,mitglied").order("created_at",{ascending:false}).limit(200),
       supabaseClient.from("resources").select("id,name,quantity,unit,active,created_at").order("id"),
       supabaseClient.from("orders").select("id,mitglied,weapon,menge,status,notizen,created_at,updated_at").order("created_at",{ascending:false}).limit(200),
@@ -893,7 +921,61 @@
     renderAll();
   }
 
-  function renderAll() { renderDashboard(); renderMembers(); renderFinances(); renderResources(); renderOrders(); renderProduction(); renderWeapons(); renderStats(); renderChronicle(); renderNotifications(); renderAdmin(); }
+  function renderAll() { renderDashboard(); renderMembers(); renderFinances(); renderResources(); renderOrders(); renderProduction(); renderWeapons(); renderStats(); renderChronicle(); renderNotifications(); renderAdmin(); renderOnlineMembers(); }
+
+  function onlineInitials(name) {
+    return initials(name || "?").slice(0,2);
+  }
+
+  function getOnlineMemberIds() {
+    return new Set(Array.from(onlineMembers.values()).map(x=>Number(x.member_id)).filter(Boolean));
+  }
+
+  function renderOnlineMembers() {
+    const ids=getOnlineMemberIds();
+    const members=cache.members.filter(m=>m.active!==false && ids.has(Number(m.id)));
+    const html=members.length ? members.sort((a,b)=>rankLevel(b.rank)-rankLevel(a.rank)).map(m=>`<div class="online-member"><div class="online-avatar">${esc(onlineInitials(m.name))}</div><div class="online-member-info"><strong>${esc(m.name||"Unbekannt")}</strong><span>${esc(rankDisplay(m.rank))} · ${esc(m.role||"Mitglied")}</span></div><span class="online-dot" title="Online"></span></div>`).join("") : `<div class="online-empty">Aktuell ist außer dir niemand online.</div>`;
+    if($("online-list")) $("online-list").innerHTML=html;
+    if($("online-list-members")) $("online-list-members").innerHTML=html;
+    const count=members.length;
+    if($("online-count")) $("online-count").textContent=`${count} online`;
+    if($("online-count-members")) $("online-count-members").textContent=`${count} online`;
+  }
+
+  async function setupOnlinePresence() {
+    if(!supabaseClient || !currentUser || !currentMember) return;
+    if(onlineChannel) { try { await supabaseClient.removeChannel(onlineChannel); } catch {} onlineChannel=null; }
+    onlineMembers=new Map();
+    onlineChannel=supabaseClient.channel("brigade-online",{config:{presence:{key:currentUser.id}}});
+    onlineChannel.on("presence",{event:"sync"},()=>{
+      const state=onlineChannel.presenceState();
+      onlineMembers=new Map();
+      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
+      renderOnlineMembers();
+      renderMembers();
+    });
+    onlineChannel.on("presence",{event:"join"},()=>{
+      const state=onlineChannel.presenceState();
+      onlineMembers=new Map();
+      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
+      renderOnlineMembers();
+      renderMembers();
+    });
+    onlineChannel.on("presence",{event:"leave"},()=>{
+      const state=onlineChannel.presenceState();
+      onlineMembers=new Map();
+      Object.values(state).flat().forEach(p=>{ if(p?.user_id && p?.member_id) onlineMembers.set(String(p.user_id),p); });
+      renderOnlineMembers();
+      renderMembers();
+    });
+    const status=await onlineChannel.subscribe();
+    if(status==="SUBSCRIBED") {
+      await onlineChannel.track({user_id:currentUser.id,member_id:currentMember.id,name:currentMember.name||"Unbekannt"});
+    } else {
+      console.warn("Online-Präsenz konnte nicht verbunden werden:",status);
+      renderOnlineMembers();
+    }
+  }
 
   function renderDashboard() {
     if($("balance")) $("balance").textContent = money(cache.financeBalance,cache.currency);
@@ -923,7 +1005,7 @@
     const q = ($( "member-search")?.value || "").toLowerCase();
     const rows = cache.members.filter(m=>`${m.name||""} ${m.rank||""} ${m.role||""}`.toLowerCase().includes(q));
     if($("member-count")) $("member-count").textContent = cache.members.filter(m=>m.active).length;
-    const html = rows.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.motto||"")}</div></td><td>${esc(m.rank||"Mitglied")}</td><td>${esc(m.role||"Mitglied")}</td><td>${m.active?'<span class="badge success">Aktiv</span>':'<span class="badge danger">Inaktiv</span>'}</td><td><div class="form-actions"><button class="small-button" data-member-detail="${Number(m.id)}">Akte</button><button class="danger-button" data-member-delete="${Number(m.id)}">Löschen</button></div></td></tr>`).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
+    const html = rows.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Rang</th><th>Rolle</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(m=>`<tr><td><strong>${esc(m.name||"–")}</strong><div class="muted">${esc(m.motto||"")}</div></td><td>${esc(m.rank||"Novik")}</td><td>${esc(m.role||"Mitglied")}</td><td>${m.active? (getOnlineMemberIds().has(Number(m.id)) ? '<span class="badge success">Online</span>' : '<span class="badge info">Offline</span>') : '<span class="badge danger">Inaktiv</span>'}</td><td><div class="form-actions"><button class="small-button" data-member-detail="${Number(m.id)}">Akte</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Löschen</button>`:""}</div></td></tr>`).join("")}</tbody></table>` : empty("Keine Mitglieder","Keine Treffer für diese Suche.");
     if($("members-page-list")) $("members-page-list").innerHTML=html;
     if($("admin-members-list")) $("admin-members-list").innerHTML=html;
   }
@@ -991,7 +1073,7 @@
     if($("rank-reference")) $("rank-reference").innerHTML=BRIGADE_RANKS.map(r=>`<div class="inline-stat"><span>${r.icon?r.icon+" ":""}<strong>${esc(r.name)}</strong> · Rang ${r.level}</span><strong>${esc(r.function)}</strong></div>`).join("");
   }
 
-  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; openDetail(m.name||"Mitglied",`${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button><button class="danger-button" data-member-delete="${Number(m.id)}">Mitglied löschen</button></div>`:""}`); }
+  function memberDetail(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m)return; const actions=canManage()?`<div class="form-actions" style="margin-top:14px"><button class="small-button" data-member-edit="${Number(m.id)}">Rang/Rolle bearbeiten</button>${canDeleteMember(m.id)?`<button class="danger-button" data-member-delete="${Number(m.id)}">Mitglied löschen</button>`:""}</div>`:""; openDetail(m.name||"Mitglied",`${rankDisplay(m.rank)}${m.role ? ` · ${m.role}` : ""}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${m.active?"Aktiv":"Inaktiv"}</strong></div><div class="detail-box"><small>Beitritt</small><strong>${date(m.created_at)}</strong></div><div class="detail-box"><small>Motto</small><strong>${esc(m.motto||"Kein Motto hinterlegt")}</strong></div><div class="detail-box"><small>Profil</small><strong>${esc(m.bio||"Keine Beschreibung hinterlegt")}</strong></div></div>${actions}`); }
   function editMember(id) { const m=cache.members.find(x=>Number(x.id)===Number(id)); if(!m||!canManage())return toast("Keine Verwaltungsberechtigung.","error"); openAction("Mitglied bearbeiten","Rang, Rolle und Status",`<div class="form-grid"><div><label>Rang</label><select id="f-rank" class="select-input" required>${rankOptions(m.rank||"Novik")}</select></div><div><label>Rolle / Zusatzfunktion</label><input id="f-role" value="${esc(m.role||"")}" placeholder="z. B. Stellvertreter"></div><div class="full"><label>Status</label><select id="f-active" class="select-input"><option value="true" ${m.active?"selected":""}>Aktiv</option><option value="false" ${!m.active?"selected":""}>Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("members").update({rank:$("f-rank").value.trim(),role:$("f-role").value.trim(),active:$("f-active").value==="true"}).eq("id",id);if(error)return setMessage($("action-message"),`Speichern fehlgeschlagen: ${errorText(error)}`,"error");closeAction();closeDetail();await fetchAll();toast("Mitglied aktualisiert.");}); }
 
   function createFinance() {
@@ -1005,13 +1087,14 @@
   }
 
   async function deleteMember(id) {
-    if(!canManage()) return toast("Keine Verwaltungsberechtigung.","error");
+    const actorRank=rankLevel(currentMember?.rank);
+    const isSelf=Number(currentMember?.id)===Number(id);
+    if(isSelf) return toast("Du kannst dein eigenes Mitglied nicht löschen.","error");
+    if(actorRank < 9 || actorRank > 12) return toast("Nur Zar, Zakon, Vor und Krestny dürfen Mitglieder löschen.","error");
     const m=cache.members.find(x=>Number(x.id)===Number(id));
     if(!m) return;
-    const isSelf=Number(currentMember?.id)===Number(id);
     const ok=confirm(`Mitglied „${m.name||"Unbekannt"}“ wirklich löschen?\n\nDabei werden auch die zugehörigen Aufträge, Produktionsjobs und Auftragsverläufe gelöscht. Finanz- und Ressourcenbuchungen bleiben erhalten.`);
     if(!ok)return;
-    if(isSelf && !confirm("Das ist dein eigenes Brigade-Profil. Nach dem Löschen wirst du abgemeldet. Wirklich fortfahren?"))return;
     try {
       const orders=cache.orders.filter(o=>Number(o.mitglied)===Number(id));
       for(const o of orders){
@@ -1021,7 +1104,6 @@
       const r3=await supabaseClient.from("orders").delete().eq("mitglied",id); if(r3.error)throw r3.error;
       const r4=await supabaseClient.from("members").delete().eq("id",id); if(r4.error)throw r4.error;
       closeAction(); closeDetail(); await fetchAll(); toast("Mitglied gelöscht.");
-      if(isSelf) await supabaseClient.auth.signOut();
     } catch(err) { toast(`Mitglied konnte nicht gelöscht werden: ${errorText(err)}`,"error"); }
   }
 
@@ -1194,7 +1276,7 @@
     try {
       const {data,error}=await supabaseClient.auth.getSession(); if(error)throw error;
       if(!data.session){showLogin();return;}
-      const ok=await loadMember(); if(ok) await fetchAll();
+      const ok=await loadMember(); if(ok) { await fetchAll(); await setupOnlinePresence(); }
     } catch(e) { console.error(e); showLogin(`Verbindung zur Verwaltung fehlgeschlagen: ${errorText(e)}`,"error"); }
   }
 
@@ -1232,7 +1314,7 @@
       loadTheme(); registerEvents(); startClock();
       if(!window.supabase?.createClient) throw new Error("Supabase JavaScript konnte nicht geladen werden. Bitte Internetverbindung und CDN prüfen.");
       supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
+      supabaseClient.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;showRecovery();return;}if(event==="SIGNED_OUT"){if(onlineChannel){try{await supabaseClient.removeChannel(onlineChannel);}catch{} onlineChannel=null;}onlineMembers=new Map();currentUser=null;currentMember=null;showLogin();return;}if(event==="SIGNED_IN"&&session&&!recoveryMode)await checkSession();},0);});
       if(recoveryUrl()){recoveryMode=true;showRecovery();return;}
       await checkSession();
     } catch(e) { console.error("Startfehler",e); showOnly("loading"); if($("loading")) $("loading").innerHTML=`<div class="error">Die Verwaltung konnte nicht gestartet werden.<br><br>${esc(errorText(e))}</div>`; }
