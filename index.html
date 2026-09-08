@@ -584,7 +584,7 @@
 </section>
 <section class="page" data-page-content="resources">
 <div class="page-header"><h2>Ressourcen</h2><p>Bestände, Mindestbestände und Bewegungen.</p></div>
-<div class="toolbar"><input class="search" id="resource-search" placeholder="Ressource suchen…" type="search"/><button class="small-button" id="resource-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="resource-add" type="button">＋ Bestand ändern</button></div>
+<div class="toolbar"><input class="search" id="resource-search" placeholder="Ressource suchen…" type="search"/><button class="small-button" id="resource-refresh" type="button">↻ Aktualisieren</button><button class="small-button" id="resource-new" type="button">＋ Ressource anlegen</button><button class="small-button" id="resource-add" type="button">＋ Bestand ändern</button></div>
 <div class="alert-list" id="resource-alerts" style="margin-bottom:15px"></div><div class="card"><div class="table-wrap" id="resources-page-list"></div></div>
 </section>
 <section class="page" data-page-content="orders">
@@ -616,6 +616,7 @@
 <div class="page-header"><h2>Verwaltung</h2><p>Werkzeuge für Berechtigungen, Systemstatus und Brigade-Chronik.</p></div>
 <div class="kpi-grid"><div class="card kpi-card"><div class="kpi-label">Deine Rolle</div><div class="kpi-number" id="admin-role" style="font-size:20px">–</div><div class="kpi-sub">Berechtigungsstufe</div></div><div class="card kpi-card"><div class="kpi-label">System</div><div class="kpi-number"><span class="badge success">Online</span></div><div class="kpi-sub">Supabase-Verbindung</div></div><div class="card kpi-card"><div class="kpi-label">Brigadezeit</div><div class="kpi-number" id="brigade-clock" style="font-size:20px">–</div><div class="kpi-sub">Lokale Browserzeit</div></div></div>
 <div class="three-grid"><div class="card"><div class="card-header"><h3>Verwaltungsaktionen</h3></div><button class="ghost-button" id="admin-member-refresh" type="button">Mitglieder neu laden</button><button class="ghost-button" id="admin-system-refresh" style="margin-top:8px" type="button">Dashboard aktualisieren</button></div><div class="card"><div class="card-header"><h3>Brigade-Chronik</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Die Chronik fasst die sichtbaren Aktivitäten aus Aufträgen, Finanzen und Ressourcen zusammen.</p><div id="chronicle-summary"></div></div><div class="card"><div class="card-header"><h3>Persönliche Einstellungen</h3></div><p class="muted" style="font-size:11px;line-height:1.55">Farbschema, Profil und Schnellzugriff findest du über das ⚙-Menü oben rechts.</p><button class="ghost-button" id="admin-open-settings" type="button">⚙ Einstellungen öffnen</button></div></div>
+<div class="card" style="margin-top:15px"><div class="card-header"><h3>Stammdaten direkt in der Verwaltung</h3><span class="badge info">Keine SQL-Eingabe nötig</span></div><p class="muted" style="font-size:11px;line-height:1.55;margin-bottom:13px">Neue Mitglieder, Ressourcen, Artikel und Produktionsstandorte können direkt über die Oberfläche angelegt werden. Die Einträge werden anschließend automatisch in Supabase gespeichert.</p><div class="form-actions" style="flex-wrap:wrap"><button class="small-button" id="admin-new-member" type="button">＋ Mitglied</button><button class="small-button" id="admin-new-resource" type="button">＋ Ressource</button><button class="small-button" id="admin-new-weapon" type="button">＋ Artikel</button><button class="small-button" id="admin-new-location" type="button">＋ Produktionsstandort</button></div></div>
 <div class="card" style="margin-top:15px"><div class="card-header"><h3>Mitglieder &amp; Rollen</h3><span class="badge warning">RLS entscheidet final</span></div><div class="table-wrap" id="admin-members-list"></div></div>
 </section>
 </main>
@@ -956,6 +957,39 @@
   }
   function jobDetail(id) { const j=cache.jobs.find(x=>Number(x.id)===Number(id));if(!j)return;openDetail(`#PRO-${String(id).padStart(6,"0")}`,`Auftrag #${j.auftrag||"–"}`,`<div class="detail-grid"><div class="detail-box"><small>Status</small><strong>${statusBadge(j.status)}</strong></div><div class="detail-box"><small>Standort</small><strong>${esc(cache.locations.find(l=>Number(l.id)===Number(j.standort))?.name||"–")}</strong></div><div class="detail-box"><small>Menge</small><strong>${Number(j.menge||0)}</strong></div><div class="detail-box"><small>Erstellt</small><strong>${date(j.created_at)}</strong></div></div>`); }
 
+  function createMember() {
+    if(!canManage()) return toast("Keine Berechtigung zum Anlegen von Mitgliedern.","error");
+    openAction("Mitglied anlegen","Neues Brigade-Mitglied direkt über die Oberfläche erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-m-name" maxlength="100" required placeholder="z. B. Ivan Petrov"></div><div><label>Rang</label><input id="f-m-rank" maxlength="60" value="Mitglied" required></div><div><label>Rolle</label><input id="f-m-role" maxlength="80" value="Mitglied" required></div><div class="full"><label>Status</label><select id="f-m-active" class="select-input"><option value="true" selected>Aktiv</option><option value="false">Inaktiv</option></select></div></div><div class="form-actions"><button class="primary-button" type="submit">Mitglied speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
+      e.preventDefault();
+      const payload={name:$('f-m-name').value.trim(),rank:$('f-m-rank').value.trim()||"Mitglied",role:$('f-m-role').value.trim()||"Mitglied",active:$('f-m-active').value==="true"};
+      const {error}=await supabaseClient.from("members").insert(payload);
+      if(error)return setMessage($('action-message'),`Mitglied konnte nicht angelegt werden: ${errorText(error)}`,"error");
+      closeAction(); await fetchAll(); toast("Mitglied angelegt.");
+    });
+  }
+
+  function createResource() {
+    if(!canManage()) return toast("Keine Berechtigung zum Anlegen von Ressourcen.","error");
+    openAction("Ressource anlegen","Neuen Lagerbestand direkt über die Oberfläche erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-r-name" maxlength="100" required placeholder="z. B. Kevlar"></div><div><label>Anfangsbestand</label><input id="f-r-qty" type="number" step="0.01" min="0" value="0" required></div><div><label>Einheit</label><input id="f-r-unit" maxlength="30" placeholder="Stück / kg / Einheiten" required></div></div><div class="form-actions"><button class="primary-button" type="submit">Ressource speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
+      e.preventDefault();
+      const name=$('f-r-name').value.trim(); const unit=$('f-r-unit').value.trim(); const quantity=Math.max(0,Number($('f-r-qty').value||0));
+      if(!name||!unit)return setMessage($('action-message'),"Name und Einheit sind erforderlich.","error");
+      const {error}=await supabaseClient.from("resources").insert({name,quantity,unit,active:true});
+      if(error)return setMessage($('action-message'),`Ressource konnte nicht angelegt werden: ${errorText(error)}`,"error");
+      closeAction(); await fetchAll(); toast("Ressource angelegt.");
+    });
+  }
+
+  function createLocation() {
+    if(!canManage()) return toast("Keine Berechtigung zum Anlegen von Produktionsstandorten.","error");
+    openAction("Produktionsstandort anlegen","Standort direkt über die Oberfläche erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-l-name" maxlength="100" required placeholder="z. B. Werkstatt"></div><div class="full"><label>Beschreibung</label><textarea id="f-l-desc" rows="4" maxlength="500" placeholder="Kurze Beschreibung des Standorts"></textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">Standort speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{
+      e.preventDefault(); const name=$('f-l-name').value.trim(); if(!name)return setMessage($('action-message'),"Bitte einen Namen eingeben.","error");
+      const {error}=await supabaseClient.from("production_locations").insert({name,description:$('f-l-desc').value.trim(),active:true});
+      if(error)return setMessage($('action-message'),`Standort konnte nicht angelegt werden: ${errorText(error)}`,"error");
+      closeAction(); await fetchAll(); toast("Produktionsstandort angelegt.");
+    });
+  }
+
   function createWeapon() {
     if(!canManage())return toast("Keine Berechtigung zum Anlegen von Artikeln.","error");
     openAction("Artikel anlegen","Neuen Artikel im Brigade-Katalog erfassen",`<div class="form-grid"><div class="full"><label>Name</label><input id="f-w-name" maxlength="100" required></div><div><label>Kategorie</label><input id="f-w-cat" maxlength="80" placeholder="z. B. Pistole"></div><div class="full"><label>Beschreibung</label><textarea id="f-w-desc" rows="4" maxlength="500"></textarea></div></div><div class="form-actions"><button class="primary-button" type="submit">Artikel speichern</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,async e=>{e.preventDefault();const {error}=await supabaseClient.from("weapons").insert({name:$("f-w-name").value.trim(),category:$("f-w-cat").value.trim(),description:$("f-w-desc").value.trim(),active:true});if(error)return setMessage($("action-message"),`Artikel konnte nicht angelegt werden: ${errorText(error)}`,"error");closeAction();await fetchAll();toast("Artikel angelegt.");});
@@ -995,7 +1029,10 @@
     qsa("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
     const searchMap={"member-search":renderMembers,"finance-search":renderFinances,"resource-search":renderResources,"order-search":renderOrders,"production-search":renderProduction,"weapon-search":renderWeapons}; Object.entries(searchMap).forEach(([id,fn])=>$(id)?.addEventListener("input",fn));
     ["member-refresh","finance-refresh","resource-refresh","order-refresh","production-refresh","weapon-refresh","admin-member-refresh","admin-system-refresh","overview-activity-refresh","chronicle-refresh"].forEach(id=>$(id)?.addEventListener("click",fetchAll));
-    $("finance-add")?.addEventListener("click",createFinance); $("resource-add")?.addEventListener("click",()=>{const r=cache.resources[0];if(r)changeResource(r.id);else toast("Zuerst eine Ressource anlegen.","warning")}); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("chronicle-print")?.addEventListener("click",()=>window.print());
+    $("finance-add")?.addEventListener("click",createFinance); $("resource-new")?.addEventListener("click",createResource); $("resource-add")?.addEventListener("click",()=>{
+      if(!cache.resources.length)return toast("Zuerst eine Ressource anlegen.","warning");
+      openAction("Bestand ändern","Wähle die Ressource aus, deren Bestand geändert werden soll.",`<div><label>Ressource</label><select id="f-resource-pick" class="select-input" required>${cache.resources.filter(r=>r.active!==false).map(r=>`<option value="${Number(r.id)}">${esc(r.name)} · ${Number(r.quantity||0)} ${esc(r.unit||"")}</option>`).join("")}</select></div><div class="form-actions"><button class="primary-button" type="submit">Weiter</button><button class="secondary-button" type="button" data-action-close>Abbrechen</button></div>`,e=>{e.preventDefault();const id=$("f-resource-pick").value;closeAction();changeResource(id);});
+    }); $("order-add")?.addEventListener("click",createOrder); $("production-add")?.addEventListener("click",createProductionJob); $("weapon-add")?.addEventListener("click",createWeapon); $("admin-new-member")?.addEventListener("click",createMember); $("admin-new-resource")?.addEventListener("click",createResource); $("admin-new-weapon")?.addEventListener("click",createWeapon); $("admin-new-location")?.addEventListener("click",createLocation); $("chronicle-print")?.addEventListener("click",()=>window.print());
     $("action-modal-close")?.addEventListener("click",closeAction); $("detail-close")?.addEventListener("click",closeDetail); $("action-modal")?.addEventListener("click",e=>{if(e.target===$("action-modal"))closeAction()}); $("detail-modal")?.addEventListener("click",e=>{if(e.target===$("detail-modal"))closeDetail()});
     document.addEventListener("click",e=>{const t=e.target.closest?.("[data-action-close]");if(t)closeAction();const md=e.target.closest?.("[data-member-detail]");if(md)memberDetail(md.dataset.memberDetail);const me=e.target.closest?.("[data-member-edit]");if(me)editMember(me.dataset.memberEdit);const rc=e.target.closest?.("[data-resource-change]");if(rc)changeResource(rc.dataset.resourceChange);const od=e.target.closest?.("[data-order-detail]");if(od)orderDetail(od.dataset.orderDetail);const os=e.target.closest?.("[data-order-status]");if(os)changeOrderStatus(os.dataset.orderStatus);const jd=e.target.closest?.("[data-job-detail]");if(jd)jobDetail(jd.dataset.jobDetail);const wd=e.target.closest?.("[data-weapon-detail]");if(wd)weaponDetail(wd.dataset.weaponDetail);const sp=e.target.closest?.("[data-search-page]");if(sp){$("global-search")?.classList.add("hidden");showPage(sp.dataset.searchPage);}});
     document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("open-search-button")?.click();}if(e.key==="Escape"){closeSettings();$("global-search")?.classList.add("hidden");}});
